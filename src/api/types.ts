@@ -112,3 +112,26 @@ export interface OfferDetail extends OfferSummary {
   df_monthly: Record<string, unknown>[] | null;
   artifacts: OfferArtifact[];
 }
+
+// --- Backtest-Roundtrip (Phase 4.3) ---
+
+export interface Plant {
+  pv_mw?: number | null;
+  bess_mw?: number | null;
+  bess_mwh?: number | null;
+  grid_limit_mw?: number | null;
+  eeg_eur_per_mwh?: number | null;
+  roundtrip_efficiency?: number | null;
+  max_cycles_per_day?: number | null;
+}
+
+export interface BacktestRequest {
+  id: number;
+  profile_id: number | null;
+  lead_id: number | null;
+  status: "pending" | "running" | "done" | "error";
+  submitted_at: string;
+  completed_at: string | null;
+  result_backtest_id: number | null;
+  payload_json: Record<string, unknown>;
+}

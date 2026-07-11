@@ -6,6 +6,7 @@ import type { Profile } from "./api/types";
 import { Layout } from "./shell/Layout";
 import type { NavKey } from "./shell/nav";
 import { ProfileSelect } from "./shell/ProfileSelect";
+import { BacktestingModule } from "./modules/backtesting/BacktestingModule";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
 import { OffersModule } from "./modules/offers/OffersModule";
 import { PlaceholderPage } from "./modules/PlaceholderPage";
@@ -55,12 +56,7 @@ export default function App() {
     <Layout nav={nav} onNavChange={setNav} profile={me} onSwitchProfile={switchProfile}>
       {nav === "dashboard" && <DashboardPage profile={me} />}
       {nav === "offers" && <OffersModule profile={me} />}
-      {nav === "backtesting" && (
-        <PlaceholderPage
-          title="Backtesting"
-          text="Das Backtesting-Modul (Messe-Tool) wird mit Meilenstein M4 integriert. Bis dahin bleibt das bestehende Messe-Tool eigenständig erreichbar."
-        />
-      )}
+      {nav === "backtesting" && <BacktestingModule />}
       {nav === "pricing" && (
         <PlaceholderPage
           title="Pricing"

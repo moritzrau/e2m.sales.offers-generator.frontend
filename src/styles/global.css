@@ -504,9 +504,15 @@ select {
   background: #eef2ff;
   color: var(--color-primary);
 }
-.badge--failed {
+.badge--failed,
+.badge--error {
   background: #fee2e2;
   color: #991b1b;
+}
+
+.badge--pending {
+  background: #eef2ff;
+  color: var(--color-primary);
 }
 .badge--muted {
   background: #f1f5f9;
