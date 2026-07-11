@@ -135,3 +135,128 @@ export interface BacktestRequest {
   result_backtest_id: number | null;
   payload_json: Record<string, unknown>;
 }
+
+// --- Pricing (Phase 5) ---
+
+export interface PricingModelInfo {
+  key: string;
+  label: string;
+  version: string;
+  description: string;
+}
+
+export interface FloorKombiOption {
+  value: string;
+  label: string;
+  backtesting_reference: string;
+}
+
+export interface FloorScenarioOption {
+  value: string;
+  label: string;
+}
+
+export interface FloorDefaults {
+  kombis: FloorKombiOption[];
+  scaling: {
+    aurora: { base_year: number; scenarios: FloorScenarioOption[] };
+    enervis: { base_year: number; scenarios: FloorScenarioOption[] };
+  };
+  defaults: {
+    teilungsverhaeltnis: number;
+    degradation: number;
+    start_year: number;
+    horizon_years: number;
+    pv_mw: number;
+    discount_rate: number;
+  };
+  ranges: {
+    start_year: [number, number];
+    horizon_years: [number, number];
+    floor_step_eur: number;
+  };
+}
+
+export interface FloorAnalyzeIn {
+  kombi: string;
+  scaling_name: "aurora" | "enervis";
+  scenario: string;
+  teilungsverhaeltnis: number;
+  degradation: number;
+  start_year: number;
+  horizon_years: number;
+  pv_mw: number;
+  discount_rate: number | null;
+  npv_base_year: number | null;
+  floor_override: number | null;
+  save: boolean;
+}
+
+export interface FloorRevenueRow {
+  year: number;
+  scale: number;
+  degradation_factor: number;
+  revenue_eur_per_mw: number;
+}
+
+export interface FloorE2mRow {
+  year: number;
+  revenue_eur_per_mw: number;
+  customer_share_B: number;
+  e2m_share: number;
+  customer_payout: number;
+  e2m_pv?: number;
+  e2m_cumulative_npv?: number;
+}
+
+export interface FloorAnalyzeResult {
+  inputs: {
+    kombi: string;
+    kombi_label: string;
+    scaling_name: string;
+    scenario: string;
+    teilungsverhaeltnis: number;
+    degradation: number;
+    start_year: number;
+    horizon_years: number;
+    pv_mw: number;
+    bess_mw: number;
+    discount_rate: number | null;
+    npv_base_year: number | null;
+    floor_override: number | null;
+  };
+  basis: {
+    basisjahr: number;
+    mehrerloese_total_eur_per_mw_year: number;
+    label: string;
+    description: string;
+    source: string;
+  };
+  recommended_floor_eur_per_mw: number;
+  chosen_floor_eur_per_mw: number;
+  summary: {
+    total_e2m_eur_per_mw: number;
+    total_customer_eur_per_mw: number;
+    break_even_year: number | null;
+    compensation_years: number[];
+    negative_years: number[];
+    npv_e2m_eur_per_mw: number | null;
+  };
+  revenue_per_year: FloorRevenueRow[];
+  e2m_per_year: FloorE2mRow[];
+}
+
+export interface FloorAnalyzeResponse {
+  result: FloorAnalyzeResult;
+  pricing_result_id: number | null;
+}
+
+export interface PricingResultSummary {
+  id: number;
+  model: string;
+  model_version: string;
+  created_at: string;
+  kombi: string | null;
+  scaling_name: string | null;
+  recommended_floor_eur_per_mw: number | null;
+}

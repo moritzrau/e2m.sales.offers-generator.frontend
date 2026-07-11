@@ -9,7 +9,7 @@ import { ProfileSelect } from "./shell/ProfileSelect";
 import { BacktestingModule } from "./modules/backtesting/BacktestingModule";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
 import { OffersModule } from "./modules/offers/OffersModule";
-import { PlaceholderPage } from "./modules/PlaceholderPage";
+import { PricingModule } from "./modules/pricing/PricingModule";
 
 export default function App() {
   const queryClient = useQueryClient();
@@ -57,12 +57,7 @@ export default function App() {
       {nav === "dashboard" && <DashboardPage profile={me} />}
       {nav === "offers" && <OffersModule profile={me} />}
       {nav === "backtesting" && <BacktestingModule />}
-      {nav === "pricing" && (
-        <PlaceholderPage
-          title="Pricing"
-          text="Das Pricing-Modul (Floor-Analyse, später Tolling) kommt mit Meilenstein M3."
-        />
-      )}
+      {nav === "pricing" && <PricingModule />}
     </Layout>
   );
 }
