@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../api/client";
 import type { BacktestRequest, UseCase } from "../../api/types";
 import { formatDateTime } from "../offers/format";
+import { LiveAnalysis } from "./LiveAnalysis";
 
 const USE_CASE_LABEL: Record<UseCase, string> = {
   colocation_green: "Co-Location Grün",
@@ -44,8 +45,11 @@ function toNum(v: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+type Tab = "live" | "requests";
+
 export function BacktestingModule() {
   const queryClient = useQueryClient();
+  const [tab, setTab] = useState<Tab>("live");
   const [form, setForm] = useState<Form>(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
   const [notConfigured, setNotConfigured] = useState(false);
@@ -100,28 +104,52 @@ export function BacktestingModule() {
     <div>
       <div className="page-head">
         <div>
-          <h2>Backtesting-Anfragen</h2>
+          <h2>Backtesting</h2>
           <p>
-            Anlagenparameter an PFM übermitteln — Ergebnis wird nach Berechnung
-            automatisch importiert und im Angebotstool verfügbar.
+            {tab === "live"
+              ? "Live-Auswertung skalierter SunSync-Backtestings (Katalog + Compute-Pipeline)."
+              : "Anlagenparameter an PFM übermitteln — Ergebnis wird nach Berechnung automatisch importiert."}
           </p>
         </div>
+        {tab === "requests" && (
+          <button
+            className="link-btn"
+            onClick={() => scanNow.mutate()}
+            disabled={scanNow.isPending}
+          >
+            Watchfolder jetzt scannen
+          </button>
+        )}
+      </div>
+
+      <div className="wizard-stepper" style={{ marginBottom: "1rem" }}>
         <button
-          className="link-btn"
-          onClick={() => scanNow.mutate()}
-          disabled={scanNow.isPending}
+          type="button"
+          className={`wizard-stepper__item ${tab === "live" ? "active" : ""}`}
+          onClick={() => setTab("live")}
         >
-          Watchfolder jetzt scannen
+          Live-Analyse
+        </button>
+        <button
+          type="button"
+          className={`wizard-stepper__item ${tab === "requests" ? "active" : ""}`}
+          onClick={() => setTab("requests")}
+        >
+          Anfragen an PFM
         </button>
       </div>
 
-      {notConfigured && (
+      {tab === "live" && <LiveAnalysis />}
+
+      {tab === "requests" && notConfigured && (
         <div className="error-banner">
           Der Backtest-Roundtrip ist noch nicht konfiguriert (kein Watchfolder
           gesetzt). PFM/IT haben den H:-Mount noch nicht bereitgestellt.
         </div>
       )}
 
+      {tab === "requests" && (
+      <>
       <div className="card">
         <h3>Neue Anfrage</h3>
         <div className="profile-form">
@@ -250,13 +278,8 @@ export function BacktestingModule() {
         )}
       </div>
 
-      <div className="card" style={{ marginTop: "1rem" }}>
-        <h3>Messe-Tool</h3>
-        <p className="muted">
-          Das Backtesting-Modul (Visualisierung) wird mit Meilenstein M4 integriert.
-          Bis dahin bleibt das bestehende Messe-Tool eigenständig erreichbar.
-        </p>
-      </div>
+      </>
+      )}
     </div>
   );
 }

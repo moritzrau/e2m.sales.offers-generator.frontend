@@ -139,6 +139,62 @@ export interface BacktestRequest {
   payload_json: Record<string, unknown>;
 }
 
+// --- Backtesting-Modul Live-Analyse (Phase 6.1) ---
+
+export interface BacktestingCatalogCombo {
+  combo_key: string;
+  combo_label: string;
+  ref_pv_mw: number | null;
+  ref_bess_mw: number;
+  available_durations_h: number[];
+}
+
+export interface BacktestingCatalogUseCase {
+  use_case: "colocation_green" | "colocation_grey" | "standalone_bess";
+  label: string;
+  combos: BacktestingCatalogCombo[];
+}
+
+export interface BacktestingScaledSizes {
+  pv_mw: number | null;
+  bess_mw: number;
+  bess_mwh: number;
+  scale_factor: number;
+}
+
+export interface BacktestingMonthlyRecord {
+  month: string;
+  month_label: string;
+  total_revenue_eur: number;
+  fcr_eur: number;
+  afrr_pos_eur: number;
+  afrr_neg_eur: number;
+  wholesale_eur: number;
+  pv_revenue_eur: number;
+  eeg_revenue_eur: number;
+  grundverguetung: number;
+  mehrerloese_brutto: number;
+  avg_daily_cycles: number;
+}
+
+export interface BacktestingKpis {
+  total_revenue_eur: number;
+  fcr_eur: number;
+  afrr_eur: number;
+  wholesale_eur: number;
+  pv_revenue_eur: number | null;
+  eeg_revenue_eur: number | null;
+}
+
+export interface BacktestingAnalyzeResult {
+  use_case: string;
+  combo_label: string;
+  duration_h: number;
+  scaled_sizes: BacktestingScaledSizes;
+  kpis: BacktestingKpis;
+  monthly: BacktestingMonthlyRecord[];
+}
+
 export interface Preset {
   id: number;
   name: string;
