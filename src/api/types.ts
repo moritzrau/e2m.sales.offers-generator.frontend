@@ -107,12 +107,19 @@ export interface OfferArtifact {
   size_bytes: number;
 }
 
+export interface OfferExportInfo {
+  applied_blocks?: string[];
+  skipped_blocks?: string[];
+  unfilled_tokens?: string[];
+}
+
 export interface OfferDetail extends OfferSummary {
   params_json: Record<string, unknown>;
   composition_json: string[];
   output_dir: string | null;
   kpis: Record<string, number> | null;
   df_monthly: Record<string, unknown>[] | null;
+  export_info: OfferExportInfo | null;
   artifacts: OfferArtifact[];
 }
 

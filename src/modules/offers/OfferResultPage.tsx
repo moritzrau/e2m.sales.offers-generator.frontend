@@ -142,6 +142,8 @@ export function OfferResultPage({ offerId, onBack }: Props) {
         </div>
       )}
 
+      {isDone && <ExportWarnings info={offer.export_info} />}
+
       {isDone && offer.kpis && (
         <div className="card">
           <h3>Kennzahlen</h3>
@@ -172,6 +174,32 @@ export function OfferResultPage({ offerId, onBack }: Props) {
           <ArtifactList artifacts={offer.artifacts} offerId={offer.id} />
         </div>
       )}
+    </div>
+  );
+}
+
+const TOKEN_HINT: Record<string, string> = {
+  LBL_FIRMENNAME: "Firmenname fehlt (kein Lead gewählt) — Deckblatt prüfen.",
+  LBL_MEHRERLOESE_PER_MW_BESS: "Kennzahl pro MW fehlt (BESS-Leistung nicht angegeben).",
+  IMG_PLOT_CYCLES: "Zyklen-Plot konnte nicht berechnet werden (Batteriekapazität unbekannt).",
+};
+
+function ExportWarnings({ info }: { info: import("../../api/types").OfferExportInfo | null }) {
+  if (!info) return null;
+  const skipped = info.skipped_blocks ?? [];
+  const unfilled = info.unfilled_tokens ?? [];
+  if (skipped.length === 0 && unfilled.length === 0) return null;
+  return (
+    <div className="error-banner" style={{ background: "#fff8e6", borderColor: "#f2d59b", color: "#7a5b13" }}>
+      <strong>Hinweise zum PPT-Export</strong> — bitte vor dem Versand in PowerPoint prüfen:
+      <ul style={{ margin: "0.4rem 0 0", paddingLeft: "1.2rem" }}>
+        {skipped.map((b) => (
+          <li key={b}>Block „{b}" ist noch nicht im Master-Template — Folie wurde übersprungen.</li>
+        ))}
+        {unfilled.map((t) => (
+          <li key={t}>{TOKEN_HINT[t] ?? `Platzhalter ${t} blieb leer und wurde entfernt.`}</li>
+        ))}
+      </ul>
     </div>
   );
 }

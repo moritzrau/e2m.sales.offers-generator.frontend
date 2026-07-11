@@ -25,7 +25,9 @@ export function StepParams({ precheck, params, onChange }: Props) {
     <div className="wizard-step">
       <h3>3. Parameter</h3>
       <p className="muted">
-        Defaults kommen aus Parameter.xlsx — anpassen, wenn nötig. Alle Angaben leer lassen heißt: Backtesting-Defaults nutzen.
+        Vorbelegt aus Parameter.xlsx — anpassen, wenn nötig. Achtung: Ein geleertes Feld
+        bedeutet „ohne diesen Parameter rechnen" (z. B. Anteil leer = Erlöse ohne
+        Teilungsverhältnis).
       </p>
 
       <div className="profile-form">
@@ -50,6 +52,12 @@ export function StepParams({ precheck, params, onChange }: Props) {
             value={fmt(params.anteil_mehrerloes_e2m)}
             onChange={(e) => onChange({ ...params, anteil_mehrerloes_e2m: toNum(e.target.value) })}
           />
+          {params.anteil_mehrerloes_e2m !== null && params.anteil_mehrerloes_e2m !== undefined && (
+            <span className="muted" style={{ display: "block", marginTop: "0.2rem" }}>
+              Kundenanteil: {Math.round((1 - params.anteil_mehrerloes_e2m) * 1000) / 10} %
+              {params.anteil_mehrerloes_e2m > 0.5 && " — ungewöhnlich hoher e2m-Anteil, bitte prüfen"}
+            </span>
+          )}
         </label>
         {!isBess && (
           <label className="profile-form-hint" style={{ gridColumn: "auto" }}>

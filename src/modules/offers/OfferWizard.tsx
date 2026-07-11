@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api, ApiError } from "../../api/client";
@@ -63,6 +63,23 @@ export function OfferWizard({ onCancel, onCreated }: Props) {
     enabled: !!precheck.data,
   });
 
+  // Parameter-Formular mit den Precheck-Defaults vorbelegen: was der User im
+  // Formular sieht, ist exakt das, was gerechnet wird. (Vorher standen die
+  // Defaults nur als Platzhalter da — leeres Anteil-Feld hieß dann still
+  // „ohne Teilungsverhältnis rechnen".)
+  const precheckBacktestId = precheck.data?.backtest_id;
+  useEffect(() => {
+    if (!precheck.data) return;
+    const d = precheck.data.default_params;
+    setParams((prev) => ({
+      dienstleistungsentgelt_eur_per_mwh: d.dienstleistungsentgelt_eur_per_mwh ?? null,
+      anteil_mehrerloes_e2m: d.anteil_mehrerloes_e2m ?? null,
+      vertragsmodell: prev.vertragsmodell ?? "DA",
+    }));
+    setComposition(null); // neues Backtesting → Komposition neu vom Default
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [precheckBacktestId]);
+
   const uploadMutation = useMutation<UploadResult, ApiError, File>({
     mutationFn: (file) => api.upload<UploadResult>("/api/offers/upload", file),
     onSuccess: (result) => {
@@ -98,14 +115,6 @@ export function OfferWizard({ onCancel, onCreated }: Props) {
     setError(null);
     if (step === 3 && composition === null && blocks.data) {
       setComposition(blocks.data.default_composition);
-    }
-    if (step === 2 && precheck.data && !params.dienstleistungsentgelt_eur_per_mwh) {
-      // Defaults aus Precheck übernehmen, wenn User nichts angepasst hat
-      setParams((prev) => ({
-        ...precheck.data!.default_params,
-        vertragsmodell: prev.vertragsmodell ?? "DA",
-        ...prev,
-      }));
     }
     setStep((s) => Math.min(s + 1, 4));
   };
