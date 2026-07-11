@@ -7,6 +7,7 @@ import { Layout } from "./shell/Layout";
 import type { NavKey } from "./shell/nav";
 import { ProfileSelect } from "./shell/ProfileSelect";
 import { DashboardPage } from "./modules/dashboard/DashboardPage";
+import { OffersModule } from "./modules/offers/OffersModule";
 import { PlaceholderPage } from "./modules/PlaceholderPage";
 
 export default function App() {
@@ -53,12 +54,7 @@ export default function App() {
   return (
     <Layout nav={nav} onNavChange={setNav} profile={me} onSwitchProfile={switchProfile}>
       {nav === "dashboard" && <DashboardPage profile={me} />}
-      {nav === "offers" && (
-        <PlaceholderPage
-          title="Angebote"
-          text="Das Angebotstool kommt mit Meilenstein M1: Backtesting hochladen, Parameter bestätigen, Angebot zusammenstellen — fertige PPTX, Excel und Charts."
-        />
-      )}
+      {nav === "offers" && <OffersModule profile={me} />}
       {nav === "backtesting" && (
         <PlaceholderPage
           title="Backtesting"

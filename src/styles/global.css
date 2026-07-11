@@ -418,6 +418,335 @@ select {
 }
 
 /* ------------------------------------------------------------------ */
+/* Angebotstool (Wizard, Historie, Ergebnis)                            */
+/* ------------------------------------------------------------------ */
+
+.primary-btn--inline {
+  min-height: 40px;
+  padding: 0 1rem;
+  font-size: 0.9rem;
+  border-radius: 9px;
+}
+
+.link-btn {
+  min-height: 0;
+  border: none;
+  background: transparent;
+  color: var(--color-primary);
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.3rem 0;
+}
+
+.link-btn:hover:not(:disabled) {
+  text-decoration: underline;
+}
+
+.link-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.offers-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.offers-table th,
+.offers-table td {
+  text-align: left;
+  padding: 0.55rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.offers-table th {
+  color: var(--color-muted);
+  font-weight: 600;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.offers-table__file {
+  max-width: 22rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+  margin-right: 0.4rem;
+}
+
+.badge--draft,
+.badge--queued {
+  background: #f1f5f9;
+  color: #475569;
+}
+.badge--running {
+  background: #fff3c4;
+  color: #8a6d1a;
+}
+.badge--done {
+  background: #dcfce7;
+  color: #166534;
+}
+.badge--final {
+  background: #eef2ff;
+  color: var(--color-primary);
+}
+.badge--failed {
+  background: #fee2e2;
+  color: #991b1b;
+}
+.badge--muted {
+  background: #f1f5f9;
+  color: #64748b;
+}
+.badge--info {
+  background: rgba(254, 87, 22, 0.12);
+  color: var(--color-accent);
+}
+
+.wizard-stepper {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  font-size: 0.82rem;
+}
+
+.wizard-stepper__item {
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  background: var(--color-surface);
+}
+
+.wizard-stepper__item.active {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.wizard-stepper__item.done {
+  border-color: var(--color-primary-soft);
+  color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.wizard-step h3 {
+  margin: 0 0 0.25rem;
+}
+
+.wizard-step h4 {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 650;
+}
+
+.wizard-nav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 1rem;
+}
+
+.dropzone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  cursor: pointer;
+  color: var(--color-muted);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.dropzone--over,
+.dropzone:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.dropzone__hint {
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.backtest-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.backtest-list__item {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.backtest-list__file {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.precheck-box {
+  margin-top: 1rem;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+
+.lead-item {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.6rem 0.7rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+}
+
+.lead-item--none {
+  background: var(--color-primary-soft);
+}
+
+.lead-form {
+  margin-top: 1rem;
+  border-top: 1px dashed var(--color-border);
+  padding-top: 1rem;
+}
+
+.block-group {
+  margin-top: 1rem;
+}
+.block-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+.block-item {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  padding: 0.6rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  cursor: pointer;
+}
+.block-item.checked {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.block-item strong {
+  display: inline-block;
+  margin-right: 0.5rem;
+}
+.block-item p.muted {
+  margin: 0.25rem 0 0;
+  font-size: 0.82rem;
+}
+
+.review-list {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 1.2rem;
+  margin: 1rem 0 1.5rem;
+  font-size: 0.9rem;
+}
+.review-list dt {
+  color: var(--color-muted);
+}
+.review-list dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Ergebnis-Seite */
+
+.progress {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--color-primary-soft);
+  overflow: hidden;
+}
+.progress__bar {
+  height: 100%;
+  background: var(--color-primary);
+  transition: width 0.3s ease;
+}
+
+.kpi-grid {
+  display: grid;
+  gap: 0.7rem;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  margin-top: 0.75rem;
+}
+.kpi-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+.kpi-tile strong {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.artifact-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 0.4rem;
+}
+.artifact-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.5rem;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 0.9rem;
+}
+.artifact-list a {
+  color: var(--color-primary);
+  text-decoration: none;
+  font-weight: 600;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.artifact-list a:hover {
+  text-decoration: underline;
+}
+
+/* ------------------------------------------------------------------ */
 /* Mobile                                                               */
 /* ------------------------------------------------------------------ */
 

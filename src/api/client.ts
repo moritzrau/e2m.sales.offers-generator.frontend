@@ -35,4 +35,24 @@ export const api = {
     request<T>(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) }),
   put: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PUT", body: body === undefined ? undefined : JSON.stringify(body) }),
+  upload: async <T>(path: string, file: File): Promise<T> => {
+    const form = new FormData();
+    form.append("file", file);
+    const response = await fetch(path, {
+      method: "POST",
+      credentials: "include",
+      body: form,
+    });
+    if (!response.ok) {
+      let detail = `Fehler ${response.status}`;
+      try {
+        const body = await response.json();
+        if (typeof body.detail === "string") detail = body.detail;
+      } catch {
+        // Body nicht als JSON lesbar
+      }
+      throw new ApiError(response.status, detail);
+    }
+    return (await response.json()) as T;
+  },
 };
