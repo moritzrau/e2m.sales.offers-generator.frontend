@@ -168,11 +168,12 @@ export function OfferWizard({ onCancel, onCreated }: Props) {
             onChange={setParams}
           />
         )}
-        {step === 3 && blocks.data && (
+        {step === 3 && blocks.data && precheck.data && (
           <StepBlocks
             blocks={blocks.data}
             composition={composition ?? blocks.data.default_composition}
             onChange={setComposition}
+            useCase={precheck.data.use_case}
           />
         )}
         {step === 4 && (

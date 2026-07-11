@@ -95,6 +95,9 @@ export interface OfferSummary {
   pricing_result_id: number | null;
   status: "draft" | "queued" | "running" | "done" | "failed" | "final";
   job_id: number | null;
+  released_by: number | null;
+  released_at: string | null;
+  sink_dir: string | null;
   created_at: string;
 }
 
@@ -134,6 +137,16 @@ export interface BacktestRequest {
   completed_at: string | null;
   result_backtest_id: number | null;
   payload_json: Record<string, unknown>;
+}
+
+export interface Preset {
+  id: number;
+  name: string;
+  use_case: string;
+  composition: string[];
+  created_by: number | null;
+  share_scope: "private" | "team";
+  created_at: string;
 }
 
 // --- Pricing (Phase 5) ---

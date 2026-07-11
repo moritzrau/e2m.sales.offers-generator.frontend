@@ -112,6 +112,17 @@ export function OfferResultPage({ offerId, onBack }: Props) {
         <div className="error-banner">{finalizeMutation.error.message}</div>
       )}
 
+      {offer.status === "final" && (
+        <div className="precheck-box">
+          Freigegeben am {offer.released_at ? formatDateTime(offer.released_at) : "—"}
+          {offer.sink_dir ? (
+            <> · Team-Ordner: <code>{offer.sink_dir}</code></>
+          ) : (
+            <> · <em>Kein Team-Ordner konfiguriert — Artefakte nur lokal.</em></>
+          )}
+        </div>
+      )}
+
       {isRunning && (
         <div className="card">
           <h3>Berechne …</h3>
