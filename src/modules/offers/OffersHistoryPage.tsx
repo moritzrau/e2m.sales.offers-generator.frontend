@@ -4,9 +4,11 @@ import { api } from "../../api/client";
 import type { Backtest, OfferSummary, Profile } from "../../api/types";
 import { formatDateTime } from "./format";
 
+export type OfferMode = "interaktiv" | "oneclick";
+
 interface Props {
   profile: Profile;
-  onNew: () => void;
+  onNew: (modus: OfferMode) => void;
   onOpen: (offerId: number) => void;
 }
 
@@ -46,9 +48,22 @@ export function OffersHistoryPage({ profile, onNew, onOpen }: Props) {
           <h2>Angebote</h2>
           <p>Historie deiner Angebote — Backtesting hochladen, Angebot zusammenstellen, PPTX herunterladen.</p>
         </div>
-        <button className="primary-btn primary-btn--inline" onClick={onNew}>
-          Neues Angebot
-        </button>
+        <div style={{ display: "flex", gap: "0.5rem" }}>
+          <button
+            className="primary-btn primary-btn--inline"
+            onClick={() => onNew("interaktiv")}
+          >
+            Interaktiv erstellen
+          </button>
+          <button
+            className="primary-btn primary-btn--inline"
+            onClick={() => onNew("oneclick")}
+            style={{ background: "#1057c8" }}
+            title="Backtesting wählen oder Use Case — alles Weitere übernimmt der Cockpit-Solver."
+          >
+            One-Click
+          </button>
+        </div>
       </div>
 
       {offers.isLoading ? (

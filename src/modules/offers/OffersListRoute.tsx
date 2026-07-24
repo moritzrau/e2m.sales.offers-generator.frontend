@@ -12,7 +12,7 @@ export function OffersListRoute({ profile }: Props) {
   return (
     <OffersHistoryPage
       profile={profile}
-      onNew={() => navigate("/angebote/neu")}
+      onNew={(modus) => navigate(`/angebote/neu?modus=${modus}`)}
       onOpen={(offerId) => navigate(`/angebote/${offerId}`)}
     />
   );

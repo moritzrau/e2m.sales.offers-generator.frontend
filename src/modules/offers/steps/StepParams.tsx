@@ -17,50 +17,25 @@ function fmt(value: number | null | undefined): string {
   return String(value).replace(".", ",");
 }
 
+/**
+ * Kompakte Zusatzparameter für den Baukasten-Schritt (Phase R-D).
+ *
+ * ``anteil_mehrerloes_e2m`` und ``dienstleistungsentgelt_eur_per_mwh`` sind
+ * ab R-D **nicht mehr hier** — sie kommen aus dem Pricing-Cockpit
+ * (siehe ``StepCockpit``) und werden im Backend über die Pricing-Bridge
+ * in die OfferParams gemappt. Was übrig bleibt sind Vertragsmodell und
+ * optionale MW-Overrides.
+ */
 export function StepParams({ precheck, params, onChange }: Props) {
   const isGrey = precheck?.use_case === "colocation_grey";
   const isBess = precheck?.use_case === "standalone_bess";
 
   return (
-    <div className="wizard-step">
-      <h3>3. Parameter</h3>
-      <p className="muted">
-        Vorbelegt aus Parameter.xlsx — anpassen, wenn nötig. Achtung: Ein geleertes Feld
-        bedeutet „ohne diesen Parameter rechnen" (z. B. Anteil leer = Erlöse ohne
-        Teilungsverhältnis).
-      </p>
-
-      <div className="profile-form">
-        <label>
-          Vermarktungsentgelt (€/MWh)
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder={fmt(precheck?.default_params?.dienstleistungsentgelt_eur_per_mwh)}
-            value={fmt(params.dienstleistungsentgelt_eur_per_mwh)}
-            onChange={(e) =>
-              onChange({ ...params, dienstleistungsentgelt_eur_per_mwh: toNum(e.target.value) })
-            }
-          />
-        </label>
-        <label>
-          Anteil Mehrerlöse e2m (0..1)
-          <input
-            type="text"
-            inputMode="decimal"
-            placeholder={fmt(precheck?.default_params?.anteil_mehrerloes_e2m)}
-            value={fmt(params.anteil_mehrerloes_e2m)}
-            onChange={(e) => onChange({ ...params, anteil_mehrerloes_e2m: toNum(e.target.value) })}
-          />
-          {params.anteil_mehrerloes_e2m !== null && params.anteil_mehrerloes_e2m !== undefined && (
-            <span className="muted" style={{ display: "block", marginTop: "0.2rem" }}>
-              Kundenanteil: {Math.round((1 - params.anteil_mehrerloes_e2m) * 1000) / 10} %
-              {params.anteil_mehrerloes_e2m > 0.5 && " — ungewöhnlich hoher e2m-Anteil, bitte prüfen"}
-            </span>
-          )}
-        </label>
+    <details className="wizard-step">
+      <summary>Erweiterte Parameter (Vertragsmodell, MW-Overrides)</summary>
+      <div className="profile-form" style={{ marginTop: "0.75rem" }}>
         {!isBess && (
-          <label className="profile-form-hint" style={{ gridColumn: "auto" }}>
+          <label>
             Vertragsmodell
             <select
               value={params.vertragsmodell ?? "DA"}
@@ -101,6 +76,6 @@ export function StepParams({ precheck, params, onChange }: Props) {
           </label>
         )}
       </div>
-    </div>
+    </details>
   );
 }
