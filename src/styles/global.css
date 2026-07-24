@@ -211,6 +211,187 @@ select {
   font-size: 0.9rem;
 }
 
+/* ------------------------------------------------------------------ */
+/* Pricing-Cockpit (R-C)                                                */
+/* ------------------------------------------------------------------ */
+
+.cockpit-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.cockpit-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.cockpit-card--solved {
+  background: #f4f7ff;
+  border-color: #c8d6f7;
+}
+
+.cockpit-card__label {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.cockpit-card__hint {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.cockpit-card__value {
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.cockpit-card__solved-tag {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  background: #dae4fa;
+  color: #1057c8;
+  font-size: 0.72rem;
+  font-weight: 600;
+  vertical-align: middle;
+}
+
+.cockpit-card input {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.cockpit-tv {
+  grid-row: 1 / span 2;
+  grid-column: 2;
+  background: linear-gradient(168deg, #001a70 0%, #102a7a 100%);
+  color: #fff;
+  border-radius: var(--radius-card);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  text-align: center;
+  box-shadow: 0 8px 24px rgba(15, 28, 63, 0.15);
+}
+
+.cockpit-tv__label {
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.cockpit-tv__value {
+  font-size: 2.6rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.cockpit-tv__hint {
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.85rem;
+}
+
+.cockpit-tv__controls {
+  margin-top: auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.cockpit-tv__controls .link-btn {
+  color: #ffb59a;
+}
+
+.cockpit-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.cockpit-kpi {
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: 10px;
+  background: var(--color-surface);
+}
+
+.cockpit-kpi__label {
+  color: var(--color-muted);
+  font-size: 0.85rem;
+}
+
+.cockpit-kpi__value {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-top: 0.15rem;
+}
+
+.cockpit-checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.cockpit-check {
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid transparent;
+}
+
+.cockpit-check__label {
+  font-weight: 600;
+}
+
+.cockpit-check__value {
+  font-size: 1.05rem;
+  margin-top: 0.1rem;
+}
+
+.cockpit-check__target {
+  font-size: 0.82rem;
+  opacity: 0.75;
+}
+
+.cockpit-check--ok {
+  background: #e7f5ea;
+  border-color: #b9dcc2;
+  color: #205a2f;
+}
+
+.cockpit-check--bad {
+  background: #fdecec;
+  border-color: #f0b8b8;
+  color: #8b2323;
+}
+
+@media (max-width: 900px) {
+  .cockpit-grid {
+    grid-template-columns: 1fr;
+  }
+  .cockpit-tv {
+    grid-row: auto;
+    grid-column: auto;
+  }
+}
+
 .profile-chip {
   display: inline-flex;
   align-items: center;

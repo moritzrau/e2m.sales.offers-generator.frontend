@@ -11,6 +11,7 @@ import { HomePage } from "./modules/home/HomePage";
 import { OfferResultRoute } from "./modules/offers/OfferResultRoute";
 import { OffersListRoute } from "./modules/offers/OffersListRoute";
 import { OfferWizardRoute } from "./modules/offers/OfferWizardRoute";
+import { PricingCockpitPage } from "./modules/pricing-cockpit/PricingCockpitPage";
 
 export default function App() {
   const queryClient = useQueryClient();
@@ -62,6 +63,7 @@ export default function App() {
           <Route path="/angebote" element={<OffersListRoute profile={me} />} />
           <Route path="/angebote/neu" element={<OfferWizardRoute profile={me} />} />
           <Route path="/angebote/:id" element={<OfferResultRoute />} />
+          <Route path="/pricing-cockpit" element={<PricingCockpitPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

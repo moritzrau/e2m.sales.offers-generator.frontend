@@ -336,3 +336,77 @@ export interface PricingResultSummary {
   scaling_name: string | null;
   recommended_floor_eur_per_mw: number | null;
 }
+
+// --- Cockpit (Phase R-C) ---
+
+export interface CockpitKonstanten {
+  integrationspauschale_eur: number;
+  monatlicher_betrag_eur: number;
+  dl_entgelt_eur_per_mwh: number;
+}
+
+export interface CockpitMindest {
+  projekt_eur: number;
+  eur_pro_mw_monat: number;
+}
+
+export interface CockpitConfig {
+  version: string;
+  use_case: string;
+  vertragsmonate_default: number;
+  bezugs_mw_basis: "pv_mw" | "bess_mw";
+  konstanten: CockpitKonstanten;
+  mindest: CockpitMindest;
+}
+
+export interface CockpitPool {
+  use_case: string;
+  kunde_only_eur: number;
+  pool_eur: number;
+  umschlag_mwh: number;
+  pv_mw: number | null;
+  bess_mw: number;
+  bess_mwh: number;
+  bezugs_mw: number;
+}
+
+export type CockpitBalanceVariable =
+  | "tv"
+  | "dl_entgelt"
+  | "monatlicher_betrag"
+  | "integrationspauschale";
+
+export interface CockpitSolveConstraints {
+  projekt_ok: boolean;
+  projekt_soll_eur: number;
+  projekt_ist_eur: number;
+  eur_pro_mw_monat_ok: boolean;
+  eur_pro_mw_monat_soll: number;
+  eur_pro_mw_monat_ist: number;
+}
+
+export interface CockpitSolveInner {
+  teilungsverhaeltnis: number;
+  integrationspauschale_eur: number;
+  monatlicher_betrag_eur: number;
+  dl_entgelt_eur_per_mwh: number;
+  balance_variable: CockpitBalanceVariable;
+  e2m_erloes_eur: number;
+  kunde_erloes_eur: number;
+  projekt_gesamt_eur: number;
+  e2m_eur_pro_mw_monat: number;
+  constraints: CockpitSolveConstraints;
+  constraints_ok: boolean;
+  warnings: string[];
+}
+
+export interface CockpitSolveResult {
+  inputs: Record<string, unknown>;
+  config_version: string;
+  solver_version: string;
+  solve: CockpitSolveInner;
+}
+
+export interface CockpitSolveResponse {
+  result: CockpitSolveResult;
+}
