@@ -35,9 +35,19 @@ export const api = {
     request<T>(path, { method: "POST", body: body === undefined ? undefined : JSON.stringify(body) }),
   put: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "PUT", body: body === undefined ? undefined : JSON.stringify(body) }),
-  upload: async <T>(path: string, file: File): Promise<T> => {
+  upload: async <T>(
+    path: string,
+    file: File,
+    fields?: Record<string, string | number | boolean | null | undefined>,
+  ): Promise<T> => {
     const form = new FormData();
     form.append("file", file);
+    if (fields) {
+      for (const [key, value] of Object.entries(fields)) {
+        if (value === undefined || value === null || value === "") continue;
+        form.append(key, String(value));
+      }
+    }
     const response = await fetch(path, {
       method: "POST",
       credentials: "include",

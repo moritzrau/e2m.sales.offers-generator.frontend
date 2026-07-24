@@ -201,7 +201,7 @@ export function LiveAnalysis() {
   );
 }
 
-function ResultView({ result }: { result: BacktestingAnalyzeResult }) {
+export function ResultView({ result }: { result: BacktestingAnalyzeResult }) {
   const months = result.monthly.map((m) => m.month_label);
 
   const seriesFor = (): { name: string; data: number[]; color: string }[] => {
