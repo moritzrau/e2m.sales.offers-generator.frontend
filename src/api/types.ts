@@ -350,6 +350,13 @@ export interface CockpitMindest {
   eur_pro_mw_monat: number;
 }
 
+export interface CockpitStandardBacktesting {
+  combo_key: string;
+  duration_h: number;
+  pv_mw: number | null;
+  bess_mw: number | null;
+}
+
 export interface CockpitConfig {
   version: string;
   use_case: string;
@@ -357,6 +364,7 @@ export interface CockpitConfig {
   bezugs_mw_basis: "pv_mw" | "bess_mw";
   konstanten: CockpitKonstanten;
   mindest: CockpitMindest;
+  standard_backtesting: CockpitStandardBacktesting | null;
 }
 
 export interface CockpitPool {

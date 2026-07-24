@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
 import { api, ApiError } from "../../api/client";
-import type { Backtest, OfferSummary } from "../../api/types";
+import type { Backtest, CockpitConfig, OfferSummary } from "../../api/types";
 
 const USE_CASE_LABEL: Record<string, string> = {
   colocation_green: "Co-Location Grün",
@@ -30,6 +30,17 @@ export function OneClickPage({ onCancel, onCreated }: Props) {
     queryKey: ["backtests"],
     queryFn: () => api.get<Backtest[]>("/api/backtests"),
   });
+
+  const cockpitCfg = useQuery<CockpitConfig>({
+    queryKey: ["cockpit-config", useCase],
+    queryFn: () =>
+      api.get<CockpitConfig>(
+        `/api/pricing/config?use_case=${encodeURIComponent(useCase)}`,
+      ),
+    enabled: variant === "use_case",
+    retry: false,
+  });
+  const stdBacktesting = cockpitCfg.data?.standard_backtesting ?? null;
 
   const parseNum = (v: string): number | null => {
     if (v === "") return null;
@@ -127,8 +138,8 @@ export function OneClickPage({ onCancel, onCreated }: Props) {
             <h3>Use Case wählen</h3>
             <p className="muted" style={{ marginTop: 0 }}>
               Das Standard-Backtesting je Use Case wird in{" "}
-              <code>cockpit_config.yaml</code> gepflegt (Platzhalter — Moritz
-              ersetzt es in R-E).
+              <code>cockpit_config.yaml</code> gepflegt. Ist keins hinterlegt,
+              muss oben ein Backtesting aus der Liste gewählt werden.
             </p>
             <div className="profile-form">
               <label>
@@ -152,6 +163,25 @@ export function OneClickPage({ onCancel, onCreated }: Props) {
                 </select>
               </label>
             </div>
+            {cockpitCfg.data && stdBacktesting === null && (
+              <div className="error-banner" style={{ marginTop: "0.75rem" }}>
+                Für „{USE_CASE_LABEL[useCase]}" ist noch kein Standard-Backtesting
+                hinterlegt. Bitte oben auf „Auf existierendem Backtesting"
+                wechseln oder <code>standard_backtesting</code> in{" "}
+                <code>cockpit_config.yaml</code> ergänzen.
+              </div>
+            )}
+            {stdBacktesting && (
+              <p className="muted" style={{ marginTop: "0.5rem" }}>
+                Standard: {stdBacktesting.combo_key} · {stdBacktesting.duration_h} h
+                {stdBacktesting.pv_mw !== null &&
+                  stdBacktesting.pv_mw !== undefined &&
+                  ` · ${stdBacktesting.pv_mw} MW PV`}
+                {stdBacktesting.bess_mw !== null &&
+                  stdBacktesting.bess_mw !== undefined &&
+                  ` · ${stdBacktesting.bess_mw} MW BESS`}
+              </p>
+            )}
           </>
         )}
 
@@ -196,7 +226,8 @@ export function OneClickPage({ onCancel, onCreated }: Props) {
             onClick={() => create.mutate()}
             disabled={
               create.isPending ||
-              (variant === "backtest" && backtestId === null)
+              (variant === "backtest" && backtestId === null) ||
+              (variant === "use_case" && stdBacktesting === null)
             }
           >
             {create.isPending ? "Erstelle Angebot …" : "Angebot erstellen"}
