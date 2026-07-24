@@ -1,19 +1,19 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 
 import { ApiError, api } from "./api/client";
 import type { Profile } from "./api/types";
-import { Layout } from "./shell/Layout";
-import type { NavKey } from "./shell/nav";
+import { AppShell } from "./shell/AppShell";
 import { ProfileSelect } from "./shell/ProfileSelect";
-import { BacktestingModule } from "./modules/backtesting/BacktestingModule";
-import { DashboardPage } from "./modules/dashboard/DashboardPage";
-import { OffersModule } from "./modules/offers/OffersModule";
-import { PricingModule } from "./modules/pricing/PricingModule";
+import { BacktestingPage } from "./modules/backtesting/BacktestingPage";
+import { BacktestRequestsPage } from "./modules/backtest-requests/BacktestRequestsPage";
+import { HomePage } from "./modules/home/HomePage";
+import { OfferResultRoute } from "./modules/offers/OfferResultRoute";
+import { OffersListRoute } from "./modules/offers/OffersListRoute";
+import { OfferWizardRoute } from "./modules/offers/OfferWizardRoute";
 
 export default function App() {
   const queryClient = useQueryClient();
-  const [nav, setNav] = useState<NavKey>("dashboard");
 
   const meQuery = useQuery<Profile | null>({
     queryKey: ["me"],
@@ -53,11 +53,18 @@ export default function App() {
   };
 
   return (
-    <Layout nav={nav} onNavChange={setNav} profile={me} onSwitchProfile={switchProfile}>
-      {nav === "dashboard" && <DashboardPage profile={me} />}
-      {nav === "offers" && <OffersModule profile={me} />}
-      {nav === "backtesting" && <BacktestingModule />}
-      {nav === "pricing" && <PricingModule />}
-    </Layout>
+    <BrowserRouter>
+      <Routes>
+        <Route element={<AppShell profile={me} onSwitchProfile={switchProfile} />}>
+          <Route path="/" element={<HomePage profile={me} />} />
+          <Route path="/backtesting" element={<BacktestingPage />} />
+          <Route path="/backtest-anfragen" element={<BacktestRequestsPage />} />
+          <Route path="/angebote" element={<OffersListRoute profile={me} />} />
+          <Route path="/angebote/neu" element={<OfferWizardRoute profile={me} />} />
+          <Route path="/angebote/:id" element={<OfferResultRoute />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   );
 }

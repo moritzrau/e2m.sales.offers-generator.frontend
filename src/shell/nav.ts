@@ -1,8 +1,11 @@
-export type NavKey = "dashboard" | "offers" | "backtesting" | "pricing";
+export interface NavItem {
+  to: string;
+  label: string;
+  end?: boolean;
+}
 
-export const NAV_ITEMS: { key: NavKey; label: string }[] = [
-  { key: "dashboard", label: "Dashboard" },
-  { key: "offers", label: "Angebote" },
-  { key: "backtesting", label: "Backtesting" },
-  { key: "pricing", label: "Pricing" },
+export const NAV_ITEMS: NavItem[] = [
+  { to: "/backtesting", label: "Backtesting" },
+  { to: "/angebote", label: "Angebote" },
+  { to: "/backtest-anfragen", label: "Backtest anfragen" },
 ];

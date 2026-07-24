@@ -4,7 +4,6 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, ApiError } from "../../api/client";
 import type { BacktestRequest, UseCase } from "../../api/types";
 import { formatDateTime } from "../offers/format";
-import { LiveAnalysis } from "./LiveAnalysis";
 
 const USE_CASE_LABEL: Record<UseCase, string> = {
   colocation_green: "Co-Location Grün",
@@ -45,11 +44,8 @@ function toNum(v: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
-type Tab = "live" | "requests";
-
-export function BacktestingModule() {
+export function BacktestRequestsPage() {
   const queryClient = useQueryClient();
-  const [tab, setTab] = useState<Tab>("live");
   const [form, setForm] = useState<Form>(EMPTY_FORM);
   const [error, setError] = useState<string | null>(null);
   const [notConfigured, setNotConfigured] = useState(false);
@@ -104,52 +100,28 @@ export function BacktestingModule() {
     <div>
       <div className="page-head">
         <div>
-          <h2>Backtesting</h2>
+          <h2>Backtest anfragen</h2>
           <p>
-            {tab === "live"
-              ? "Live-Auswertung skalierter SunSync-Backtestings (Katalog + Compute-Pipeline)."
-              : "Anlagenparameter an PFM übermitteln — Ergebnis wird nach Berechnung automatisch importiert."}
+            Anlagenparameter an PFM übermitteln — Ergebnis wird nach Berechnung
+            automatisch importiert.
           </p>
         </div>
-        {tab === "requests" && (
-          <button
-            className="link-btn"
-            onClick={() => scanNow.mutate()}
-            disabled={scanNow.isPending}
-          >
-            Watchfolder jetzt scannen
-          </button>
-        )}
-      </div>
-
-      <div className="wizard-stepper" style={{ marginBottom: "1rem" }}>
         <button
-          type="button"
-          className={`wizard-stepper__item ${tab === "live" ? "active" : ""}`}
-          onClick={() => setTab("live")}
+          className="link-btn"
+          onClick={() => scanNow.mutate()}
+          disabled={scanNow.isPending}
         >
-          Live-Analyse
-        </button>
-        <button
-          type="button"
-          className={`wizard-stepper__item ${tab === "requests" ? "active" : ""}`}
-          onClick={() => setTab("requests")}
-        >
-          Anfragen an PFM
+          Watchfolder jetzt scannen
         </button>
       </div>
 
-      {tab === "live" && <LiveAnalysis />}
-
-      {tab === "requests" && notConfigured && (
+      {notConfigured && (
         <div className="error-banner">
           Der Backtest-Roundtrip ist noch nicht konfiguriert (kein Watchfolder
           gesetzt). PFM/IT haben den H:-Mount noch nicht bereitgestellt.
         </div>
       )}
 
-      {tab === "requests" && (
-      <>
       <div className="card">
         <h3>Neue Anfrage</h3>
         <div className="profile-form">
@@ -277,9 +249,6 @@ export function BacktestingModule() {
           </p>
         )}
       </div>
-
-      </>
-      )}
     </div>
   );
 }
