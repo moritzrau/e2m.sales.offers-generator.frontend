@@ -182,6 +182,18 @@ export interface BacktestingMonthlyRecord {
   grundverguetung: number;
   mehrerloese_brutto: number;
   avg_daily_cycles: number;
+  pv_gross_mwh?: number;
+  pv_grid_mwh?: number;
+  pv_direct_mwh?: number;
+  pv_to_battery_mwh?: number;
+  battery_to_grid_mwh?: number;
+  pv_curtailment_mwh?: number;
+  battery_loss_mwh?: number;
+  grid_to_battery_mwh?: number;
+  batt_charge_mwh?: number;
+  batt_discharge_mwh?: number;
+  avg_charge_price?: number;
+  avg_discharge_price?: number;
 }
 
 export interface BacktestingKpis {
@@ -191,15 +203,92 @@ export interface BacktestingKpis {
   wholesale_eur: number;
   pv_revenue_eur: number | null;
   eeg_revenue_eur: number | null;
+  eur_per_mwh_storage?: number;
+  avg_daily_cycles?: number;
+  pv_gross_mwh?: number;
+  battery_to_grid_mwh?: number;
+}
+
+export interface ChartSeries {
+  name: string;
+  data: number[];
+  color?: string;
+  kind: "bar" | "line";
+}
+
+export interface ChartPayload {
+  months: string[];
+  series: ChartSeries[];
+}
+
+export interface BacktestingSourceInfo {
+  origin: "standard" | "custom";
+  label: string;
+  preset_key?: string | null;
+  combo_key?: string | null;
+  duration_h?: number | null;
+  backtest_id?: number | null;
+  approximation_note?: string | null;
+}
+
+export interface BacktestingFeatureFlags {
+  linear_scaling: boolean;
+  green_split: boolean;
+  pfm_grey_split: boolean;
+  depth_scaling: boolean;
+  energy_tab: boolean;
+}
+
+export interface BacktestingAssumptionItem {
+  key: string;
+  label: string;
+  value: string;
 }
 
 export interface BacktestingAnalyzeResult {
   use_case: string;
-  combo_label: string;
+  label: string;
   duration_h: number;
   scaled_sizes: BacktestingScaledSizes;
   kpis: BacktestingKpis;
   monthly: BacktestingMonthlyRecord[];
+  preset_key: string;
+  revenue_chart: ChartPayload;
+  energy_chart?: ChartPayload | null;
+  market_revenue_chart?: ChartPayload | null;
+  source?: BacktestingSourceInfo;
+  features?: BacktestingFeatureFlags;
+  warnings?: string[];
+  assumptions?: BacktestingAssumptionItem[];
+}
+
+export interface BacktestingGreenRevenueRecord {
+  month: string;
+  month_label: string;
+  grundverguetung: number;
+  mehrerloese: number;
+  eeg_revenue: number;
+  revenue_pv_only_eur: number;
+  colocation_revenue_ex_eeg_eur: number;
+  mehrwert_colocation_eur: number;
+  total_revenue_eur: number;
+}
+
+export interface BacktestingGreenRevenueResponse {
+  preset_key: string;
+  monthly: BacktestingGreenRevenueRecord[];
+}
+
+export interface BacktestingUploadListItem {
+  id: number;
+  label: string;
+  use_case: string | null;
+  original_filename: string;
+  created_at: string;
+  needs_meta: boolean;
+  ref_pv_mw?: number | null;
+  ref_bess_mw?: number | null;
+  ref_bess_mwh?: number | null;
 }
 
 export interface Preset {
