@@ -345,9 +345,10 @@ export interface CockpitKonstanten {
   dl_entgelt_eur_per_mwh: number;
 }
 
+/** Beide Mindestumsätze beziehen sich auf die GESAMTE Vertragslaufzeit. */
 export interface CockpitMindest {
   projekt_eur: number;
-  eur_pro_mw_monat: number;
+  eur_pro_mw_jahr: number;
 }
 
 export interface CockpitStandardBacktesting {
@@ -355,6 +356,25 @@ export interface CockpitStandardBacktesting {
   duration_h: number;
   pv_mw: number | null;
   bess_mw: number | null;
+}
+
+/** Floorpreis-Parameter; null, wenn der Use Case kein Floor-Modell hat. */
+export interface CockpitFloorpreisConfig {
+  scenario: string;
+  start_year: number;
+  /** Obergrenze der Floor-Zusage in Jahren (Vorgabe: 10). */
+  max_floor_years: number;
+  /** Standard-Teilungsverhältnis als Ausgangspunkt (Vorgabe: 0,84). */
+  tv_standard: number;
+  /** Anteil des Zuzahlungsrisikos, den e2m zusätzlich verdienen muss. */
+  risikoaufschlag_lambda: number;
+  /** Im Floor-Modus false: nur der Gesamt-Mindestumsatz gilt. */
+  mindest_pro_mw_gilt: boolean;
+  degradation: number;
+  discount_rate: number;
+  npv_base_year: number;
+  npv_start_year: number;
+  floor_step: number;
 }
 
 export interface CockpitConfig {
@@ -365,6 +385,7 @@ export interface CockpitConfig {
   konstanten: CockpitKonstanten;
   mindest: CockpitMindest;
   standard_backtesting: CockpitStandardBacktesting | null;
+  floorpreis: CockpitFloorpreisConfig | null;
 }
 
 export interface CockpitPool {
@@ -388,11 +409,17 @@ export interface CockpitSolveConstraints {
   projekt_ok: boolean;
   projekt_soll_eur: number;
   projekt_ist_eur: number;
-  eur_pro_mw_monat_ok: boolean;
-  eur_pro_mw_monat_soll: number;
-  eur_pro_mw_monat_ist: number;
+  eur_pro_mw_jahr_ok: boolean;
+  eur_pro_mw_jahr_soll: number;
+  eur_pro_mw_jahr_ist: number;
+  /** false im Floorpreis-Modus — dort gilt nur die Gesamt-Schranke. */
+  eur_pro_mw_jahr_gilt: boolean;
 }
 
+/**
+ * Alle ``*_eur``-Werte sind Laufzeitwerte (gesamte Vertragslaufzeit),
+ * nicht Jahreswerte.
+ */
 export interface CockpitSolveInner {
   teilungsverhaeltnis: number;
   integrationspauschale_eur: number;
@@ -402,9 +429,76 @@ export interface CockpitSolveInner {
   e2m_erloes_eur: number;
   kunde_erloes_eur: number;
   projekt_gesamt_eur: number;
-  e2m_eur_pro_mw_monat: number;
+  e2m_eur_pro_mw_jahr: number;
+  laufzeit_jahre: number;
   constraints: CockpitSolveConstraints;
   constraints_ok: boolean;
+  warnings: string[];
+}
+
+/** Vermarktungsmodell: bisheriges Verhalten vs. Floorpreis-Zusage. */
+export type CockpitVermarktungsmodell = "fully_merchant" | "floorpreis";
+
+export interface CockpitFloorYear {
+  year: number;
+  scale: number;
+  revenue_eur_per_mw: number;
+  customer_share_B: number;
+  customer_payout: number;
+  e2m_share: number;
+  e2m_pv: number;
+  e2m_cumulative_npv: number;
+}
+
+export interface CockpitFloorSummary {
+  total_e2m: number;
+  total_customer: number;
+  cumulative_e2m_last: number;
+  break_even_year: number | null;
+  compensation_years: number[];
+  negative_years: number[];
+  npv_e2m_total: number | null;
+  discount_rate: number | null;
+  npv_base_year: number | null;
+}
+
+/** Nur vorhanden, wenn mit vermarktungsmodell="floorpreis" gerechnet wurde. */
+export interface CockpitFloorResult {
+  /** Tatsächlich angesetzter Floor (Standard oder Slider-Wert), €/MW/a. */
+  floor_eur_per_mw: number;
+  /** Untergrenze des Sliders: aus tv_standard abgeleitet, kein Aufpreis. */
+  floor_standard: number;
+  /** Empfohlenes Slider-Ende: höchster Floor ohne negatives e2m-Jahr. */
+  floor_deckel: number;
+  /** Harte Grenze: darüber ist der Floor auch bei TV = 0 nicht tragbar. */
+  floor_hart: number;
+  /** Schrittweite des Sliders in €/MW/a. */
+  floor_step: number;
+  /** Zum gewählten Floor nachgerechnetes Teilungsverhältnis. */
+  teilungsverhaeltnis: number;
+  tv_standard: number;
+  bindendes_jahr: number;
+  /** Länge der Floor-Zusage = min(max_floor_years, laufzeit_jahre). */
+  floor_jahre: number;
+  laufzeit_jahre: number;
+  /** Jahre im Fenster, in denen der Floor tatsächlich greift. */
+  jahre_mit_floor: number;
+  /** Zusätzlicher e2m-Erlös gegenüber dem Standard-Floor, € über die Laufzeit. */
+  aufpreis_e2m_eur: number;
+  /** Erwartete Zuzahlung am Standard-TV, € über das Floor-Fenster. */
+  risiko_eur: number;
+  risikoaufschlag_lambda: number;
+  e2m_erloes_eur: number;
+  e2m_standard_eur: number;
+  kunde_pool_eur: number;
+  pool_gesamt_eur: number;
+  scenario: string;
+  basis_eur_per_mw: number;
+  start_year: number;
+  max_floor_years: number;
+  degradation: number;
+  jahre: CockpitFloorYear[];
+  summary: CockpitFloorSummary;
   warnings: string[];
 }
 
@@ -412,7 +506,11 @@ export interface CockpitSolveResult {
   inputs: Record<string, unknown>;
   config_version: string;
   solver_version: string;
+  /** Im Floorpreis-Modus kommt dies aus der Floor-Rechnung. */
   solve: CockpitSolveInner;
+  /** Nur im Floorpreis-Modus: der Fully-Merchant-Vergleichswert. */
+  solve_merchant?: CockpitSolveInner;
+  floor?: CockpitFloorResult;
 }
 
 export interface CockpitSolveResponse {

@@ -7,16 +7,41 @@ const EUR_FORMAT = new Intl.NumberFormat("de-DE", {
 });
 
 const NUMBER_FORMAT_0 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
+const NUMBER_FORMAT_1 = new Intl.NumberFormat("de-DE", {
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
 const NUMBER_FORMAT_2 = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 2 });
+
+const NUMBER_FORMATS: Record<0 | 1 | 2, Intl.NumberFormat> = {
+  0: NUMBER_FORMAT_0,
+  1: NUMBER_FORMAT_1,
+  2: NUMBER_FORMAT_2,
+};
+
+const PERCENT_FORMAT_1 = new Intl.NumberFormat("de-DE", {
+  style: "percent",
+  minimumFractionDigits: 1,
+  maximumFractionDigits: 1,
+});
 
 export function formatEUR(value: number | null | undefined): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
   return EUR_FORMAT.format(value);
 }
 
-export function formatNumber(value: number | null | undefined, decimals: 0 | 2 = 2): string {
+export function formatNumber(
+  value: number | null | undefined,
+  decimals: 0 | 1 | 2 = 2,
+): string {
   if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  return (decimals === 0 ? NUMBER_FORMAT_0 : NUMBER_FORMAT_2).format(value);
+  return NUMBER_FORMATS[decimals].format(value);
+}
+
+/** Anteil als Prozent — Eingabe ist ein Bruch (0,84 → "84,0 %"). */
+export function formatPercent(value: number | null | undefined): string {
+  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  return PERCENT_FORMAT_1.format(value);
 }
 
 export function formatBytes(bytes: number): string {
