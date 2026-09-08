@@ -46,6 +46,17 @@ select {
   min-height: var(--touch-min);
 }
 
+/* Checkbox/Radio sind keine Textfelder — die Touch-Mindesthoehe und die
+   100%-Breite aus .profile-form duerfen sie nicht aufblaehen. */
+input[type="checkbox"],
+input[type="radio"] {
+  min-height: 0;
+  width: auto;
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+
 .muted {
   color: var(--color-muted);
   font-size: 0.88rem;
@@ -862,7 +873,8 @@ select {
   color: var(--color-muted);
 }
 
-.profile-form input {
+.profile-form input,
+.profile-form select {
   width: 100%;
   margin-top: 0.3rem;
   padding: 0.5rem 0.7rem;
@@ -873,10 +885,27 @@ select {
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
-.profile-form input:focus {
+.profile-form input:focus,
+.profile-form select:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(0, 26, 112, 0.1);
+}
+
+/* Checkbox-Zeile: Kaestchen links, Text daneben — nicht gestreckt. */
+.profile-form label.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.85rem;
+  color: var(--color-text);
+  min-height: var(--touch-min);
+}
+
+.profile-form label.checkbox-row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  margin-top: 0;
 }
 
 .profile-form-hint {
@@ -885,7 +914,6 @@ select {
 }
 
 .primary-btn {
-  grid-column: 1 / -1;
   min-height: 48px;
   border: none;
   border-radius: 11px;
@@ -895,6 +923,12 @@ select {
   font-weight: 600;
   letter-spacing: 0.01em;
   transition: filter 0.15s ease, transform 0.1s ease;
+}
+
+/* Frueher trug .primary-btn selbst grid-column:1/-1 und wurde damit in jedem
+   Grid zum Vollbreit-Balken. Jetzt nur noch dort, wo es gemeint war. */
+.profile-form > .primary-btn:not(.primary-btn--inline) {
+  grid-column: 1 / -1;
 }
 
 .primary-btn:hover:not(:disabled) {

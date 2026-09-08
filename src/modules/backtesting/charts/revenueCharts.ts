@@ -4,6 +4,7 @@ import type {
   ChartPayload,
   ChartSeries,
 } from "../../../api/types";
+import { COLORS, eur, legend, monthlyBase, textStyle, tooltip } from "./theme";
 
 export const REVENUE_COLORS = {
   dark_blue: "#001A70",
@@ -14,8 +15,6 @@ export const REVENUE_COLORS = {
   dark_orange: "#FE5716",
 } as const;
 
-const COMPACT_EUR = new Intl.NumberFormat("de-DE", { notation: "compact" });
-const TOOLTIP_EUR = new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 });
 
 function isNonZeroSeries(data: number[]): boolean {
   return data.some((v) => Math.abs(v) > 1e-6);
@@ -26,22 +25,7 @@ function filterNonZeroSeries(series: ChartSeries[]): ChartSeries[] {
 }
 
 function baseGridOption(months: string[]) {
-  return {
-    tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "shadow" },
-      valueFormatter: (v: number) => `${TOOLTIP_EUR.format(v)} €`,
-    },
-    legend: { bottom: 0 },
-    grid: { left: 70, right: 20, top: 20, bottom: 60 },
-    xAxis: { type: "category", data: months },
-    yAxis: {
-      type: "value",
-      axisLabel: {
-        formatter: (v: number) => COMPACT_EUR.format(v),
-      },
-    },
-  };
+  return monthlyBase(months, "eur");
 }
 
 export function buildRevenueChartOption(payload: ChartPayload): Record<string, unknown> {
@@ -57,13 +41,14 @@ export function buildRevenueChartOption(payload: ChartPayload): Record<string, u
         stack: "erloes",
         data: s.data.map((v) => Math.round(v)),
         itemStyle: { color: s.color ?? REVENUE_COLORS.medium_blue },
+        barMaxWidth: 46,
       })),
       ...lineSeries.map((s) => ({
         name: s.name,
         type: "line",
         data: s.data.map((v) => Math.round(v)),
         itemStyle: { color: s.color ?? REVENUE_COLORS.dark_blue },
-        lineStyle: { width: 2 },
+        lineStyle: { width: 2.2 },
         symbol: "circle",
         symbolSize: 6,
         z: 10,
@@ -178,64 +163,31 @@ export function buildRevenueShareDonutOption(
 ): Record<string, unknown> {
   const nonZero = slices.filter((s) => Math.abs(s.value) > 1e-6);
   return {
-    tooltip: {
+    textStyle,
+    animationDuration: 420,
+    tooltip: tooltip({
       trigger: "item",
-      valueFormatter: (v: number) => `${TOOLTIP_EUR.format(v)} €`,
-    },
-    legend: { bottom: 0 },
+      valueFormatter: (v: number) => eur(v),
+    }),
+    legend: legend(),
     series: [
       {
         type: "pie",
-        radius: ["42%", "68%"],
-        center: ["50%", "45%"],
+        radius: ["46%", "70%"],
+        center: ["50%", "44%"],
         avoidLabelOverlap: true,
-        itemStyle: { borderRadius: 4, borderColor: "#fff", borderWidth: 2 },
+        itemStyle: { borderRadius: 5, borderColor: "#fff", borderWidth: 2 },
         label: {
           formatter: "{b}\n{d}%",
+          color: COLORS.ink2,
+          fontSize: 11.5,
         },
+        labelLine: { lineStyle: { color: COLORS.line } },
         data: nonZero.map((s) => ({
           name: s.name,
           value: Math.round(s.value),
           itemStyle: { color: s.color },
         })),
-      },
-    ],
-  };
-}
-
-export function buildArbitrageSpreadOption(monthly: BacktestingMonthlyRecord[]): Record<string, unknown> {
-  const months = monthly.map((m) => m.month_label);
-  return {
-    tooltip: {
-      trigger: "axis",
-      valueFormatter: (v: number) => `${TOOLTIP_EUR.format(v)} €/MWh`,
-    },
-    legend: { bottom: 0 },
-    grid: { left: 70, right: 20, top: 20, bottom: 60 },
-    xAxis: { type: "category", data: months },
-    yAxis: {
-      type: "value",
-      name: "€/MWh",
-      axisLabel: {
-        formatter: (v: number) => COMPACT_EUR.format(v),
-      },
-    },
-    series: [
-      {
-        name: "Ø Ladepreis",
-        type: "line",
-        data: monthly.map((m) => m.avg_charge_price ?? 0),
-        itemStyle: { color: REVENUE_COLORS.medium_blue },
-        symbol: "circle",
-        symbolSize: 6,
-      },
-      {
-        name: "Ø Entladepreis",
-        type: "line",
-        data: monthly.map((m) => m.avg_discharge_price ?? 0),
-        itemStyle: { color: REVENUE_COLORS.dark_orange },
-        symbol: "circle",
-        symbolSize: 6,
       },
     ],
   };
@@ -254,35 +206,22 @@ export function buildGreenComparisonOption(
 ): Record<string, unknown> {
   const months = monthly.map((m) => m.month_label ?? m.month);
   return {
-    tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "shadow" },
-      valueFormatter: (v: number) => `${TOOLTIP_EUR.format(v)} €`,
-    },
-    legend: { bottom: 0 },
-    grid: { left: 70, right: 20, top: 20, bottom: 60 },
-    xAxis: { type: "category", data: months },
-    yAxis: {
-      type: "value",
-      axisLabel: {
-        formatter: (v: number) => COMPACT_EUR.format(v),
-      },
-    },
+    ...monthlyBase(months, "eur"),
     series: [
       {
         name: "PV-only",
         type: "bar",
         data: monthly.map((m) => Math.round(m.revenue_pv_only_eur)),
-        itemStyle: { color: REVENUE_COLORS.medium_green },
+        itemStyle: { color: REVENUE_COLORS.medium_green, borderRadius: [3, 3, 0, 0] },
       },
       {
-        name: "CoLocation (ohne EEG)",
+        name: "Co-Location (ohne EEG)",
         type: "bar",
         data: monthly.map((m) => Math.round(m.colocation_revenue_ex_eeg_eur)),
-        itemStyle: { color: REVENUE_COLORS.medium_blue },
+        itemStyle: { color: REVENUE_COLORS.medium_blue, borderRadius: [3, 3, 0, 0] },
       },
       {
-        name: "Mehrwert CoLocation",
+        name: "Mehrwert Co-Location",
         type: "line",
         data: monthly.map((m) => Math.round(m.mehrwert_colocation_eur)),
         itemStyle: { color: REVENUE_COLORS.dark_orange },
@@ -304,18 +243,7 @@ export function buildCumulativeRevenueOption(monthly: BacktestingMonthlyRecord[]
   });
 
   return {
-    tooltip: {
-      trigger: "axis",
-      valueFormatter: (v: number) => `${TOOLTIP_EUR.format(v)} €`,
-    },
-    grid: { left: 70, right: 20, top: 20, bottom: 40 },
-    xAxis: { type: "category", data: months },
-    yAxis: {
-      type: "value",
-      axisLabel: {
-        formatter: (v: number) => COMPACT_EUR.format(v),
-      },
-    },
+    ...monthlyBase(months, "eur", { showLegend: false }),
     series: [
       {
         name: "Kumulierter Erlös",
@@ -323,7 +251,8 @@ export function buildCumulativeRevenueOption(monthly: BacktestingMonthlyRecord[]
         smooth: true,
         data: values,
         itemStyle: { color: REVENUE_COLORS.dark_blue },
-        areaStyle: { color: "rgba(0, 26, 112, 0.08)" },
+        lineStyle: { width: 2.4 },
+        areaStyle: { color: "rgba(0, 26, 112, 0.09)" },
         symbol: "circle",
         symbolSize: 6,
       },

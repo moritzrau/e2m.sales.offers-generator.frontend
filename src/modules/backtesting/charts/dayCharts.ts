@@ -1,3 +1,5 @@
+import { COLORS, FONT_FAMILY, categoryAxis, legend, textStyle, tooltip } from "./theme";
+
 export const DAY_COLORS = {
   dark_blue: "#001A70",
   medium_blue: "#1057C8",
@@ -57,12 +59,17 @@ function hasNonZero(values: number[]): boolean {
   return values.some((v) => Math.abs(v) > 1e-6);
 }
 
-function baseDayGrid(labels: string[], bottom = 60) {
+function baseDayGrid(labels: string[], bottom = 40) {
   return {
-    tooltip: { trigger: "axis" },
-    legend: { bottom: 0 },
-    grid: { left: 60, right: 60, top: 24, bottom },
-    xAxis: { type: "category", data: labels, axisLabel: { interval: 7 } },
+    textStyle,
+    animationDuration: 420,
+    tooltip: tooltip({
+      trigger: "axis",
+      axisPointer: { type: "line", lineStyle: { color: COLORS.line, width: 1 } },
+    }),
+    legend: legend(),
+    grid: { left: 8, right: 8, top: 26, bottom, containLabel: true },
+    xAxis: categoryAxis(labels, { axisLabel: { interval: 11, color: COLORS.muted, fontSize: 11, fontFamily: FONT_FAMILY } }),
   };
 }
 
@@ -79,7 +86,8 @@ export function buildDayScheduleOption(
       type: "line",
       data: rows.map((r) => r.pv_mw),
       itemStyle: { color: DAY_COLORS.medium_green },
-      areaStyle: { color: "rgba(136, 217, 16, 0.12)" },
+      lineStyle: { width: 1.6, color: "#4F9E30" },
+      areaStyle: { color: "rgba(136, 217, 16, 0.20)" },
       yAxisIndex: 0,
       showSymbol: false,
     });
@@ -117,33 +125,70 @@ export function buildDayScheduleOption(
 
   return {
     ...baseDayGrid(labels),
-    tooltip: {
+    tooltip: tooltip({
       trigger: "axis",
+      axisPointer: { type: "line", lineStyle: { color: COLORS.line, width: 1 } },
       valueFormatter: (v: number, _idx: number, params: { seriesName?: string }) => {
         if (params.seriesName === "SoC") return `${TOOLTIP_MW.format(v)} MWh`;
         return `${TOOLTIP_MW.format(v)} MW`;
       },
-    },
+    }),
     yAxis: [
       {
         type: "value",
         name: "MW",
         position: "left",
-        axisLabel: { formatter: (v: number) => COMPACT_NUM.format(v) },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: COLORS.grid } },
+        nameTextStyle: { color: COLORS.muted, fontSize: 11, fontFamily: FONT_FAMILY },
+        axisLabel: {
+          color: COLORS.muted,
+          fontSize: 11,
+          fontFamily: FONT_FAMILY,
+          formatter: (v: number) => COMPACT_NUM.format(v),
+        },
       },
       {
         type: "value",
         name: "MWh",
         position: "right",
-        axisLabel: { formatter: (v: number) => COMPACT_NUM.format(v) },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { show: false },
+        nameTextStyle: { color: COLORS.muted, fontSize: 11, fontFamily: FONT_FAMILY },
+        axisLabel: {
+          color: COLORS.muted,
+          fontSize: 11,
+          fontFamily: FONT_FAMILY,
+          formatter: (v: number) => COMPACT_NUM.format(v),
+        },
       },
     ],
     series,
   };
 }
 
+/** Zusammenhaengende Bereiche mit negativem Preis als [von, bis]-Labelpaare. */
+function negativePriceBands(rows: DetailDayRow[], labels: string[]): [string, string][] {
+  const bands: [string, string][] = [];
+  let start: number | null = null;
+  rows.forEach((r, i) => {
+    if (r.price_eur_mwh < 0) {
+      if (start === null) start = i;
+    } else if (start !== null) {
+      bands.push([labels[start], labels[i - 1]]);
+      start = null;
+    }
+  });
+  if (start !== null) bands.push([labels[start], labels[rows.length - 1]]);
+  return bands;
+}
+
 export function buildDayPriceRevenueOption(rows: DetailDayRow[]): Record<string, unknown> {
   const labels = rows.map((r) => formatTimeLabel(r.timestamp));
+  const negativeBands = negativePriceBands(rows, labels);
+  const hasNegativePrice = negativeBands.length > 0;
   let cumulative = 0;
   const cumRevenue = rows.map((r) => {
     cumulative += r.total_revenue_eur;
@@ -152,25 +197,44 @@ export function buildDayPriceRevenueOption(rows: DetailDayRow[]): Record<string,
 
   return {
     ...baseDayGrid(labels),
-    tooltip: {
+    tooltip: tooltip({
       trigger: "axis",
+      axisPointer: { type: "line", lineStyle: { color: COLORS.line, width: 1 } },
       valueFormatter: (v: number, _idx: number, params: { seriesName?: string }) => {
         if (params.seriesName === "Preis") return `${TOOLTIP_MW.format(v)} €/MWh`;
         return `${TOOLTIP_EUR.format(v)} €`;
       },
-    },
+    }),
     yAxis: [
       {
         type: "value",
         name: "€/MWh",
         position: "left",
-        axisLabel: { formatter: (v: number) => COMPACT_NUM.format(v) },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { lineStyle: { color: COLORS.grid } },
+        nameTextStyle: { color: COLORS.muted, fontSize: 11, fontFamily: FONT_FAMILY },
+        axisLabel: {
+          color: COLORS.muted,
+          fontSize: 11,
+          fontFamily: FONT_FAMILY,
+          formatter: (v: number) => COMPACT_NUM.format(v),
+        },
       },
       {
         type: "value",
         name: "€",
         position: "right",
-        axisLabel: { formatter: (v: number) => COMPACT_NUM.format(v) },
+        axisLine: { show: false },
+        axisTick: { show: false },
+        splitLine: { show: false },
+        nameTextStyle: { color: COLORS.muted, fontSize: 11, fontFamily: FONT_FAMILY },
+        axisLabel: {
+          color: COLORS.muted,
+          fontSize: 11,
+          fontFamily: FONT_FAMILY,
+          formatter: (v: number) => COMPACT_NUM.format(v),
+        },
       },
     ],
     series: [
@@ -179,8 +243,27 @@ export function buildDayPriceRevenueOption(rows: DetailDayRow[]): Record<string,
         type: "line",
         data: rows.map((r) => r.price_eur_mwh),
         itemStyle: { color: DAY_COLORS.medium_orange },
+        lineStyle: { width: 2 },
         yAxisIndex: 0,
         showSymbol: false,
+        // Stunden mit negativem Preis rot hinterlegen — dort verdient der
+        // Speicher am Laden statt am Verkaufen.
+        markArea: hasNegativePrice
+          ? {
+              silent: true,
+              itemStyle: { color: "rgba(254, 87, 22, 0.10)" },
+              data: negativeBands.map((b) => [{ xAxis: b[0] }, { xAxis: b[1] }]),
+            }
+          : undefined,
+        markLine: hasNegativePrice
+          ? {
+              silent: true,
+              symbol: "none",
+              lineStyle: { color: DAY_COLORS.dark_orange, type: "dashed", width: 1.2 },
+              label: { show: false },
+              data: [{ yAxis: 0 }],
+            }
+          : undefined,
       },
       {
         name: "Kum. Tageserlös",

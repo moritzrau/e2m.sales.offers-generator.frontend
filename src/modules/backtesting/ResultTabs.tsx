@@ -1,12 +1,13 @@
-import { useState } from "react";
+import { useEffect } from "react";
 
 import type { BacktestingAnalyzeResult } from "../../api/types";
-import { formatEUR, formatNumber } from "../offers/format";
-import { AnnahmenPopover } from "./AnnahmenPopover";
+import { AnnahmenFooter } from "./components/AnnahmenFooter";
+import { ResultHero } from "./components/ResultHero";
 import type { GreenRevenueMonthly } from "./charts/revenueCharts";
 import { TabEnergie } from "./tabs/TabEnergie";
 import { TabErloese } from "./tabs/TabErloese";
 import { TabTagesdetail } from "./tabs/TabTagesdetail";
+import { TabUebersicht } from "./tabs/TabUebersicht";
 
 export interface ResultCatalogParams {
   use_case: string;
@@ -17,9 +18,10 @@ export interface ResultCatalogParams {
   include_eeg?: boolean;
 }
 
-type TabKey = "erloese" | "energie" | "tagesdetail";
+export type TabKey = "uebersicht" | "erloese" | "energie" | "tagesdetail";
 
 const TAB_LABELS: Record<TabKey, string> = {
+  uebersicht: "Übersicht",
   erloese: "Erlöse",
   energie: "Energie",
   tagesdetail: "Tagesdetail",
@@ -29,132 +31,69 @@ interface ResultTabsProps {
   result: BacktestingAnalyzeResult;
   catalogParams?: ResultCatalogParams;
   greenRevenue?: { monthly: GreenRevenueMonthly[] } | null;
+  tab: TabKey;
+  onTabChange: (tab: TabKey) => void;
 }
 
-function sumMonthly(
-  monthly: BacktestingAnalyzeResult["monthly"],
-  field: "grundverguetung" | "mehrerloese_brutto",
-): number {
-  return monthly.reduce((acc, m) => acc + (m[field] ?? 0), 0);
-}
-
-export function ResultTabs({ result, catalogParams, greenRevenue }: ResultTabsProps) {
-  const [tab, setTab] = useState<TabKey>("erloese");
-  const isGreen = result.use_case === "colocation_green";
-  const isGrey = result.use_case === "colocation_grey";
+export function ResultTabs({
+  result,
+  catalogParams,
+  greenRevenue,
+  tab,
+  onTabChange,
+}: ResultTabsProps) {
   const tabs: TabKey[] =
     result.use_case === "standalone_bess"
-      ? ["erloese", "tagesdetail"]
-      : ["erloese", "energie", "tagesdetail"];
-  const s = result.scaled_sizes;
+      ? ["uebersicht", "erloese", "tagesdetail"]
+      : ["uebersicht", "erloese", "energie", "tagesdetail"];
+
+  // Nach einem Wechsel des Use Case kann der aktive Tab wegfallen.
+  const active = tabs.includes(tab) ? tab : "uebersicht";
+  useEffect(() => {
+    if (active !== tab) onTabChange(active);
+  }, [active, tab, onTabChange]);
 
   return (
-    <div className="card" style={{ marginTop: "1rem" }}>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          flexWrap: "wrap",
-          gap: "0.75rem",
-        }}
-      >
-        <div>
-          <h3 style={{ marginBottom: "0.25rem" }}>{result.label}</h3>
-          <p className="muted" style={{ margin: 0 }}>
-            {result.duration_h}h ·{" "}
-            {s.pv_mw !== null && s.pv_mw > 0 ? `${formatNumber(s.pv_mw, 2)} MW PV · ` : ""}
-            {formatNumber(s.bess_mw, 2)} MW / {formatNumber(s.bess_mwh, 2)} MWh BESS · Skalierung ×
-            {new Intl.NumberFormat("de-DE", { maximumFractionDigits: 3 }).format(s.scale_factor)}
-          </p>
-          {result.source?.approximation_note && (
-            <p className="profile-form-hint" style={{ margin: "0.35rem 0 0" }}>
-              {result.source.approximation_note}
-            </p>
-          )}
-        </div>
-        <AnnahmenPopover assumptions={result.assumptions ?? []} />
-      </div>
+    <div>
+      <ResultHero result={result} />
+
+      {result.source?.approximation_note && (
+        <p className="bt-hint" style={{ marginTop: "-0.6rem", marginBottom: "1rem" }}>
+          {result.source.approximation_note}
+        </p>
+      )}
 
       {result.warnings && result.warnings.length > 0 && (
-        <div className="error-banner" style={{ marginTop: "0.75rem" }}>
+        <div className="error-banner">
           {result.warnings.map((w) => (
             <div key={w}>{w}</div>
           ))}
         </div>
       )}
 
-      <div className="kpi-grid" style={{ marginTop: "1rem" }}>
-        <div className="kpi-tile">
-          <span className="muted">Gesamterlös</span>
-          <strong>{formatEUR(result.kpis.total_revenue_eur)}</strong>
-        </div>
-        {isGreen && (
-          <>
-            <div className="kpi-tile">
-              <span className="muted">Grundvergütung</span>
-              <strong>{formatEUR(sumMonthly(result.monthly, "grundverguetung"))}</strong>
-            </div>
-            <div className="kpi-tile">
-              <span className="muted">Mehrerlöse</span>
-              <strong>{formatEUR(sumMonthly(result.monthly, "mehrerloese_brutto"))}</strong>
-            </div>
-          </>
-        )}
-        {result.kpis.eeg_revenue_eur !== null && (
-          <div className="kpi-tile">
-            <span className="muted">EEG-Marktprämie</span>
-            <strong>{formatEUR(result.kpis.eeg_revenue_eur)}</strong>
-          </div>
-        )}
-        {isGrey && result.kpis.pv_revenue_eur !== null && (
-          <div className="kpi-tile">
-            <span className="muted">PV-Erlös</span>
-            <strong>{formatEUR(result.kpis.pv_revenue_eur)}</strong>
-          </div>
-        )}
-        {!isGreen && (
-          <>
-            <div className="kpi-tile">
-              <span className="muted">FCR</span>
-              <strong>{formatEUR(result.kpis.fcr_eur)}</strong>
-            </div>
-            <div className="kpi-tile">
-              <span className="muted">aFRR (netto)</span>
-              <strong>{formatEUR(result.kpis.afrr_eur)}</strong>
-            </div>
-            <div className="kpi-tile">
-              <span className="muted">Wholesale</span>
-              <strong>{formatEUR(result.kpis.wholesale_eur)}</strong>
-            </div>
-          </>
-        )}
-        {result.kpis.eur_per_mwh_storage != null && (
-          <div className="kpi-tile">
-            <span className="muted">€/MWh Speicher</span>
-            <strong>{formatEUR(result.kpis.eur_per_mwh_storage)}</strong>
-          </div>
-        )}
-      </div>
-
-      <div className="wizard-stepper" style={{ marginTop: "1.25rem", marginBottom: "1rem" }}>
+      <div className="bt-tabs" role="tablist">
         {tabs.map((key) => (
           <button
             key={key}
             type="button"
-            className={`wizard-stepper__item ${tab === key ? "active" : ""}`}
-            onClick={() => setTab(key)}
+            role="tab"
+            aria-selected={active === key}
+            className={active === key ? "is-active" : ""}
+            onClick={() => onTabChange(key)}
           >
             {TAB_LABELS[key]}
           </button>
         ))}
       </div>
 
-      {tab === "erloese" && <TabErloese result={result} greenRevenue={greenRevenue} />}
-      {tab === "energie" && <TabEnergie result={result} />}
-      {tab === "tagesdetail" && (
+      {active === "uebersicht" && <TabUebersicht result={result} />}
+      {active === "erloese" && <TabErloese result={result} greenRevenue={greenRevenue} />}
+      {active === "energie" && <TabEnergie result={result} />}
+      {active === "tagesdetail" && (
         <TabTagesdetail result={result} useCase={result.use_case} catalogParams={catalogParams} />
       )}
+
+      <AnnahmenFooter assumptions={result.assumptions ?? []} />
     </div>
   );
 }

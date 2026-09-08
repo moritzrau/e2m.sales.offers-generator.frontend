@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactECharts from "echarts-for-react";
 
 import { api, ApiError } from "../../../api/client";
@@ -146,6 +146,15 @@ export function TabTagesdetail({ result, useCase, catalogParams }: TabTagesdetai
     }
   }, [date, profileMonth, resolvedParams]);
 
+  // Beim Oeffnen des Tabs sofort laden — das Datum ist ohnehin vorbelegt.
+  const autoLoaded = useRef(false);
+  useEffect(() => {
+    if (autoLoaded.current) return;
+    if (!resolvedParams?.combo_key) return;
+    autoLoaded.current = true;
+    void loadData();
+  }, [resolvedParams, loadData]);
+
   const scheduleOption = useMemo(
     () => (detail?.rows.length ? buildDayScheduleOption(detail.rows, { showPv }) : null),
     [detail, showPv],
@@ -176,30 +185,35 @@ export function TabTagesdetail({ result, useCase, catalogParams }: TabTagesdetai
 
   return (
     <div>
-      <div className="profile-form" style={{ alignItems: "flex-end", marginBottom: "1rem" }}>
-        <label>
-          Datum
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-        </label>
-        <label>
-          Monat (Ø Tagesprofil)
-          <select value={profileMonth} onChange={(e) => setProfileMonth(e.target.value)}>
-            <option value="">Gesamtjahr</option>
-            {monthOptions.map((m) => (
-              <option key={m.value} value={m.value}>
-                {m.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button
-          type="button"
-          className="primary-btn"
-          onClick={() => void loadData()}
-          disabled={loading || !resolvedParams?.combo_key}
-        >
-          {loading ? "Lade …" : "Laden"}
-        </button>
+      <div className="bt-card" style={{ marginBottom: "1.25rem" }}>
+        <div className="bt-form" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))" }}>
+          <label className="bt-field">
+            <span>Datum</span>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </label>
+          <label className="bt-field">
+            <span>Monat für Ø Tagesprofil</span>
+            <select value={profileMonth} onChange={(e) => setProfileMonth(e.target.value)}>
+              <option value="">Gesamtjahr</option>
+              {monthOptions.map((m) => (
+                <option key={m.value} value={m.value}>
+                  {m.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <div className="bt-field">
+            <span>&nbsp;</span>
+            <button
+              type="button"
+              className="bt-btn bt-btn--primary"
+              onClick={() => void loadData()}
+              disabled={loading || !resolvedParams?.combo_key}
+            >
+              {loading ? "Lade …" : "Aktualisieren"}
+            </button>
+          </div>
+        </div>
       </div>
 
       {!resolvedParams?.combo_key && (
@@ -209,41 +223,66 @@ export function TabTagesdetail({ result, useCase, catalogParams }: TabTagesdetai
       {error && <div className="error-banner">{error}</div>}
       {profileError && !error && <div className="error-banner">{profileError}</div>}
 
-      {loading && <p className="muted">Lade Tagesdetail und Tagesprofil …</p>}
+      {loading && (
+        <div className="bt-card" aria-busy="true">
+          <div className="bt-skel bt-skel--line" style={{ width: "30%" }} />
+          <div className="bt-skel bt-skel--chart" />
+        </div>
+      )}
 
       {detail && !loading && (
         <>
-          <p className="muted" style={{ marginTop: 0 }}>
+          <p className="bt-hint" style={{ marginTop: 0, marginBottom: "1rem" }}>
             {detail.date}
-            {dayTotalRevenue !== null && (
-              <> · Tageserlös gesamt: {formatEUR(dayTotalRevenue)}</>
-            )}
+            {dayTotalRevenue !== null && <> · Tageserlös gesamt <b>{formatEUR(dayTotalRevenue)}</b></>}
           </p>
 
           {detail.rows.length === 0 ? (
-            <p className="muted">Keine Daten für dieses Datum vorhanden.</p>
+            <div className="bt-empty">
+              <strong>Keine Daten für dieses Datum</strong>
+              Wählen Sie ein Datum innerhalb des Backtesting-Zeitraums.
+            </div>
           ) : (
             <>
-              <h4 style={{ marginTop: 0 }}>Fahrplan</h4>
-              {scheduleOption && (
-                <ReactECharts option={scheduleOption} style={{ height: 320 }} notMerge lazyUpdate />
-              )}
+              <section className="bt-section">
+                <div className="bt-section__head">
+                  <h4>Fahrplan</h4>
+                  <p>
+                    Erzeugung, Laden und Entladen im Viertelstundenraster, dazu der Ladestand.
+                  </p>
+                </div>
+                <div className="bt-card">
+                  {scheduleOption && (
+                    <ReactECharts option={scheduleOption} style={{ height: 340 }} notMerge lazyUpdate />
+                  )}
+                </div>
+              </section>
 
-              <h4 style={{ marginTop: "1.25rem" }}>Preis & kumulierter Tageserlös</h4>
-              {priceRevenueOption && (
-                <ReactECharts
-                  option={priceRevenueOption}
-                  style={{ height: 280 }}
-                  notMerge
-                  lazyUpdate
-                />
-              )}
+              <section className="bt-section">
+                <div className="bt-section__head">
+                  <h4>Preis und kumulierter Tageserlös</h4>
+                  <p>
+                    <b>Negative Preise sind rot unterlegt</b> — dort verdient der Speicher am
+                    Laden, nicht am Verkaufen.
+                  </p>
+                </div>
+                <div className="bt-card">
+                  {priceRevenueOption && (
+                    <ReactECharts option={priceRevenueOption} style={{ height: 300 }} notMerge lazyUpdate />
+                  )}
+                </div>
+              </section>
 
               {fcrOption && (
-                <>
-                  <h4 style={{ marginTop: "1.25rem" }}>FCR-Abrufe</h4>
-                  <ReactECharts option={fcrOption} style={{ height: 260 }} notMerge lazyUpdate />
-                </>
+                <section className="bt-section">
+                  <div className="bt-section__head">
+                    <h4>FCR-Abrufe</h4>
+                    <p>Vorgehaltene Leistung positiv und negativ.</p>
+                  </div>
+                  <div className="bt-card">
+                    <ReactECharts option={fcrOption} style={{ height: 280 }} notMerge lazyUpdate />
+                  </div>
+                </section>
               )}
             </>
           )}
@@ -251,17 +290,15 @@ export function TabTagesdetail({ result, useCase, catalogParams }: TabTagesdetai
       )}
 
       {profile && !loading && profileOption && (
-        <>
-          <h4 style={{ marginTop: "1.25rem" }}>
-            Ø Tagesprofil
-            {profile.month ? ` (${profile.month})` : " (Gesamtjahr)"}
-          </h4>
-          <ReactECharts option={profileOption} style={{ height: 300 }} notMerge lazyUpdate />
-        </>
-      )}
-
-      {!detail && !loading && !error && (
-        <p className="muted">Datum wählen und „Laden" klicken, um Tagesdetail anzuzeigen.</p>
+        <section className="bt-section">
+          <div className="bt-section__head">
+            <h4>Ø Tagesprofil{profile.month ? ` — ${profile.month}` : " — Gesamtjahr"}</h4>
+            <p>Der typische Tag im gewählten Zeitraum, gemittelt über alle Tage.</p>
+          </div>
+          <div className="bt-card">
+            <ReactECharts option={profileOption} style={{ height: 320 }} notMerge lazyUpdate />
+          </div>
+        </section>
       )}
     </div>
   );

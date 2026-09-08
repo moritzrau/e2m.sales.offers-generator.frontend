@@ -5,28 +5,10 @@ import { api, ApiError } from "../../api/client";
 import type { BacktestingUploadListItem } from "../../api/types";
 import { formatDateTime } from "../offers/format";
 
-export type BacktestingSourceMode = "standard" | "custom_config" | "custom_upload";
-
 export type CustomAnalyzeUseCase =
   | "colocation_green"
   | "colocation_grey"
   | "standalone_bess";
-
-export interface CustomAnalyzePayload {
-  use_case: CustomAnalyzeUseCase;
-  pv_mw: number | null;
-  bess_mw: number;
-  duration_h: number;
-  include_eeg: boolean;
-}
-
-interface SourcePickerProps {
-  mode: BacktestingSourceMode;
-  onChange: (mode: BacktestingSourceMode) => void;
-  onCustomAnalyze?: (payload: CustomAnalyzePayload) => void;
-  selectedUploadId?: number | null;
-  onUploadSelect?: (id: number | null) => void;
-}
 
 const USE_CASE_OPTIONS: { value: CustomAnalyzeUseCase; label: string }[] = [
   { value: "colocation_green", label: "Co-Location Grün" },
@@ -34,131 +16,10 @@ const USE_CASE_OPTIONS: { value: CustomAnalyzeUseCase; label: string }[] = [
   { value: "standalone_bess", label: "Standalone BESS" },
 ];
 
-const DURATION_OPTIONS = [1, 2, 3, 4];
-
 const UPLOAD_FEATURE_HINTS = [
   "PFM-basierter FCR/aFRR-Split nur im Standard-Katalog verfügbar",
   "Depth-Scaling (2h → 3/4h) nur im Standard-Katalog verfügbar",
 ];
-
-function parseDecimal(value: string): number | null {
-  if (value.trim() === "") return null;
-  const n = parseFloat(value.replace(",", "."));
-  return Number.isFinite(n) ? n : null;
-}
-
-function CustomConfigForm({
-  onCustomAnalyze,
-}: {
-  onCustomAnalyze?: (payload: CustomAnalyzePayload) => void;
-}) {
-  const [useCase, setUseCase] = useState<CustomAnalyzeUseCase>("colocation_green");
-  const [pvMw, setPvMw] = useState("10");
-  const [bessMw, setBessMw] = useState("5");
-  const [durationH, setDurationH] = useState(2);
-  const [includeEeg, setIncludeEeg] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const isStandalone = useCase === "standalone_bess";
-
-  const handleAnalyze = () => {
-    setError(null);
-    const bess = parseDecimal(bessMw);
-    if (bess === null || bess <= 0) {
-      setError("Bitte eine gültige BESS-Leistung (MW) eingeben.");
-      return;
-    }
-    const pv = isStandalone ? null : parseDecimal(pvMw);
-    if (!isStandalone && (pv === null || pv <= 0)) {
-      setError("Bitte eine gültige PV-Leistung (MW) eingeben.");
-      return;
-    }
-    onCustomAnalyze?.({
-      use_case: useCase,
-      pv_mw: pv,
-      bess_mw: bess,
-      duration_h: durationH,
-      include_eeg: includeEeg,
-    });
-  };
-
-  return (
-    <div className="card" style={{ marginTop: "0.75rem" }}>
-      <h3 style={{ marginTop: 0 }}>Freie Konfiguration</h3>
-      <p className="muted" style={{ marginTop: 0 }}>
-        Anlagengrößen frei eingeben — das Backend wählt die passende Referenzdatei und skaliert
-        linear darauf.
-      </p>
-      <div className="profile-form">
-        <label>
-          Use Case
-          <select
-            value={useCase}
-            onChange={(e) => setUseCase(e.target.value as CustomAnalyzeUseCase)}
-          >
-            {USE_CASE_OPTIONS.map((opt) => (
-              <option key={opt.value} value={opt.value}>
-                {opt.label}
-              </option>
-            ))}
-          </select>
-        </label>
-        {!isStandalone && (
-          <label>
-            PV (MW)
-            <input
-              type="text"
-              inputMode="decimal"
-              value={pvMw}
-              onChange={(e) => setPvMw(e.target.value)}
-            />
-          </label>
-        )}
-        <label>
-          BESS (MW)
-          <input
-            type="text"
-            inputMode="decimal"
-            value={bessMw}
-            onChange={(e) => setBessMw(e.target.value)}
-          />
-        </label>
-        <label>
-          BESS-Dauer (h)
-          <select value={durationH} onChange={(e) => setDurationH(Number(e.target.value))}>
-            {DURATION_OPTIONS.map((h) => (
-              <option key={h} value={h}>
-                {h} h
-              </option>
-            ))}
-          </select>
-        </label>
-        {useCase === "colocation_green" && (
-          <label style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <input
-              type="checkbox"
-              checked={includeEeg}
-              onChange={(e) => setIncludeEeg(e.target.checked)}
-            />
-            EEG-Marktprämie in Erlöse einbeziehen
-          </label>
-        )}
-      </div>
-      <p className="profile-form-hint" style={{ marginTop: "0.75rem" }}>
-        Näherung: lineare Skalierung ohne Re-Optimierung — Ergebnisse können von einer
-        projektspezifischen Neuberechnung abweichen.
-      </p>
-      {error && <div className="error-banner">{error}</div>}
-      {onCustomAnalyze && (
-        <div style={{ marginTop: "0.75rem" }}>
-          <button type="button" className="primary-btn primary-btn--inline" onClick={handleAnalyze}>
-            Analysieren
-          </button>
-        </div>
-      )}
-    </div>
-  );
-}
 
 interface UploadMetaForm {
   label: string;
@@ -395,7 +256,7 @@ function UploadMetaPatch({
   );
 }
 
-function CustomUploadPanel({
+export function UploadPanel({
   selectedUploadId,
   onUploadSelect,
 }: {
@@ -475,48 +336,5 @@ function CustomUploadPanel({
       </div>
       {dialogOpen && <UploadDialog onClose={() => setDialogOpen(false)} onUploaded={refresh} />}
     </>
-  );
-}
-
-export function SourcePicker({
-  mode,
-  onChange,
-  onCustomAnalyze,
-  selectedUploadId,
-  onUploadSelect,
-}: SourcePickerProps) {
-  return (
-    <div>
-      <div className="wizard-stepper" style={{ marginBottom: "1rem" }}>
-        <button
-          type="button"
-          className={`wizard-stepper__item ${mode === "standard" ? "active" : ""}`}
-          onClick={() => onChange("standard")}
-        >
-          Standard-Katalog
-        </button>
-        <button
-          type="button"
-          className={`wizard-stepper__item ${mode === "custom_config" ? "active" : ""}`}
-          onClick={() => onChange("custom_config")}
-        >
-          Freie Konfiguration
-        </button>
-        <button
-          type="button"
-          className={`wizard-stepper__item ${mode === "custom_upload" ? "active" : ""}`}
-          onClick={() => onChange("custom_upload")}
-        >
-          Eigenes Backtesting
-        </button>
-      </div>
-      {mode === "custom_config" && <CustomConfigForm onCustomAnalyze={onCustomAnalyze} />}
-      {mode === "custom_upload" && (
-        <CustomUploadPanel
-          selectedUploadId={selectedUploadId}
-          onUploadSelect={onUploadSelect}
-        />
-      )}
-    </div>
   );
 }

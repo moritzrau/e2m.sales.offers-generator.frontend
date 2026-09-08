@@ -1,5 +1,6 @@
 import type { BacktestingMonthlyRecord, ChartPayload, ChartSeries } from "../../../api/types";
 import { formatNumber } from "../../offers/format";
+import { COLORS, monthlyBase } from "./theme";
 
 export const ENERGY_COLORS = {
   dark_blue: "#001A70",
@@ -8,9 +9,14 @@ export const ENERGY_COLORS = {
   medium_orange: "#FF861D",
   medium_green: "#88D910",
   dark_orange: "#FE5716",
+  light_orange: "#FFB210",
+  dark_green: "#4F9E30",
 } as const;
 
 const PV_STACK_NAMES = new Set(["PV direkt", "PV → Batterie", "Abregelung"]);
+
+const SANKEY_FONT =
+  'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
 function sumField(monthly: BacktestingMonthlyRecord[], field: keyof BacktestingMonthlyRecord): number {
   return monthly.reduce((acc, row) => {
@@ -163,34 +169,19 @@ export function buildEnergyChartOption(payload: ChartPayload): Record<string, un
   const visibleSeries = payload.series.filter((s) => s.data.some((v) => Math.abs(v) > 1e-6));
 
   return {
-    tooltip: {
-      trigger: "axis",
-      axisPointer: { type: "shadow" },
-      valueFormatter: (v: number) => mwhTooltip(v),
-    },
-    legend: { bottom: 0 },
-    grid: { left: 70, right: 20, top: 20, bottom: 60 },
-    xAxis: { type: "category", data: payload.months },
-    yAxis: {
-      type: "value",
-      name: "MWh",
-      axisLabel: {
-        formatter: (v: number) =>
-          new Intl.NumberFormat("de-DE", { notation: "compact", maximumFractionDigits: 1 }).format(v),
-      },
-    },
+    ...monthlyBase(payload.months, "mwh", { axisName: "MWh" }),
     series: visibleSeries.map((s) => ({
       name: s.name,
       type: s.kind === "line" ? "line" : "bar",
       stack: isPvStackBar(s) ? "pv" : undefined,
       data: s.data.map((v) => Math.round(v * 10) / 10),
-      itemStyle: { color: s.color ?? ENERGY_COLORS.medium_blue },
+      itemStyle: {
+        color: s.color ?? ENERGY_COLORS.medium_blue,
+        ...(isPvStackBar(s) ? {} : { borderRadius: [3, 3, 0, 0] }),
+      },
+      barMaxWidth: 46,
       ...(s.kind === "line"
-        ? {
-            symbol: "circle",
-            symbolSize: 6,
-            lineStyle: { width: 2 },
-          }
+        ? { symbol: "circle", symbolSize: 6, lineStyle: { width: 2.2 }, z: 5 }
         : {}),
     })),
   };
@@ -207,24 +198,42 @@ export function buildEnergySankeyOption(
     return null;
   }
 
-  const nodes = [
-    { name: "PV", itemStyle: { color: ENERGY_COLORS.medium_green } },
-    { name: "Batterie", itemStyle: { color: ENERGY_COLORS.medium_orange } },
-    { name: "Netz", itemStyle: { color: ENERGY_COLORS.medium_blue } },
-    { name: "Abregelung", itemStyle: { color: ENERGY_COLORS.dark_orange } },
-    { name: "Verlust", itemStyle: { color: ENERGY_COLORS.dark_orange } },
+  const total = flows.pv_gross + (isGrey ? flows.grid_to_batt : 0);
+  const share = (v: number) => (total > 0 ? `${formatNumber((v / total) * 100, 1)} %` : "");
+
+  interface Node {
+    name: string;
+    itemStyle: { color: string; borderRadius: number };
+    label?: Record<string, unknown>;
+  }
+
+  const node = (name: string, color: string, position: "left" | "right"): Node => ({
+    name,
+    itemStyle: { color, borderRadius: 3 },
+    label: { position },
+  });
+
+  const nodes: Node[] = [
+    node("PV brutto", ENERGY_COLORS.medium_green, "left"),
+    node("Batterie", ENERGY_COLORS.medium_orange, "right"),
+    node("Netzeinspeisung", ENERGY_COLORS.dark_blue, "right"),
+    node("Abregelung", ENERGY_COLORS.light_orange, "right"),
+    node("Verlust", ENERGY_COLORS.dark_orange, "right"),
   ];
 
   const links: { source: string; target: string; value: number }[] = [
-    { source: "PV", target: "Netz", value: flows.pv_direct },
-    { source: "PV", target: "Batterie", value: flows.pv_to_batt },
-    { source: "PV", target: "Abregelung", value: flows.curtail },
-    { source: "Batterie", target: "Netz", value: flows.batt_to_grid },
+    { source: "PV brutto", target: "Netzeinspeisung", value: flows.pv_direct },
+    { source: "PV brutto", target: "Batterie", value: flows.pv_to_batt },
+    { source: "PV brutto", target: "Abregelung", value: flows.curtail },
+    { source: "Batterie", target: "Netzeinspeisung", value: flows.batt_to_grid },
     { source: "Batterie", target: "Verlust", value: flows.batt_loss },
   ];
 
+  // Grau: Netzbezug speist die Batterie. Das darf NICHT auf denselben
+  // Netz-Knoten zeigen wie die Einspeisung — Sankey kennt keine Zyklen.
   if (isGrey && flows.grid_to_batt > 0) {
-    links.push({ source: "Netz", target: "Batterie", value: flows.grid_to_batt });
+    nodes.unshift(node("Netzbezug", ENERGY_COLORS.light_blue, "left"));
+    links.push({ source: "Netzbezug", target: "Batterie", value: flows.grid_to_batt });
   }
 
   const activeLinks = links.filter((l) => l.value > 1e-6);
@@ -232,26 +241,87 @@ export function buildEnergySankeyOption(
     return null;
   }
 
+  const used = new Set<string>();
+  activeLinks.forEach((l) => {
+    used.add(l.source);
+    used.add(l.target);
+  });
+  const activeNodes = nodes.filter((n) => used.has(n.name));
+
+  const valueByNode = new Map<string, number>();
+  activeNodes.forEach((n) => {
+    const incoming = activeLinks
+      .filter((l) => l.target === n.name)
+      .reduce((a, l) => a + l.value, 0);
+    const outgoing = activeLinks
+      .filter((l) => l.source === n.name)
+      .reduce((a, l) => a + l.value, 0);
+    valueByNode.set(n.name, Math.max(incoming, outgoing));
+  });
+
   return {
+    textStyle: { fontFamily: SANKEY_FONT, color: "#0F1C3F" },
+    animationDuration: 480,
     tooltip: {
       trigger: "item",
-      formatter: (params: { data?: { source?: string; target?: string; value?: number }; name?: string }) => {
-        const data = params.data;
-        if (data?.source && data.target && typeof data.value === "number") {
-          return `${data.source} → ${data.target}<br/>${mwhTooltip(data.value)}`;
+      backgroundColor: "rgba(255,255,255,0.98)",
+      borderColor: "#DFE5F2",
+      borderWidth: 1,
+      padding: [8, 11],
+      textStyle: { color: "#0F1C3F", fontSize: 12, fontFamily: SANKEY_FONT },
+      extraCssText: "box-shadow:0 6px 22px rgba(15,28,63,.13);border-radius:9px;",
+      formatter: (params: {
+        dataType?: string;
+        data?: { source?: string; target?: string; value?: number; name?: string };
+        name?: string;
+      }) => {
+        const d = params.data;
+        if (params.dataType === "edge" && d?.source && d.target && typeof d.value === "number") {
+          return `${d.source} → ${d.target}<br/><b>${mwhTooltip(d.value)}</b> · ${share(d.value)}`;
         }
-        return params.name ?? "";
+        const name = d?.name ?? params.name ?? "";
+        const v = valueByNode.get(name);
+        return v === undefined
+          ? name
+          : `<b>${name}</b><br/>${mwhTooltip(v)} · ${share(v)}`;
       },
     },
     series: [
       {
         type: "sankey",
+        left: 142,
+        right: 150,
+        top: 16,
+        bottom: 16,
+        nodeWidth: 13,
+        nodeGap: 14,
         layoutIterations: 32,
-        emphasis: { focus: "adjacency" },
         nodeAlign: "justify",
-        lineStyle: { color: "gradient", curveness: 0.5, opacity: 0.45 },
-        label: { fontSize: 12 },
-        data: nodes,
+        draggable: false,
+        emphasis: { focus: "adjacency" },
+        blur: { itemStyle: { opacity: 0.25 }, lineStyle: { opacity: 0.08 } },
+        lineStyle: { color: "gradient", curveness: 0.5, opacity: 0.42 },
+        label: {
+          fontFamily: SANKEY_FONT,
+          fontSize: 12,
+          color: "#0F1C3F",
+          // Kleine helle Plakette, damit die Beschriftung ueber den Baendern
+          // lesbar bleibt, ohne sie zu verdecken.
+          backgroundColor: "rgba(255,255,255,0.88)",
+          padding: [3, 6],
+          borderRadius: 5,
+          formatter: (p: { name: string }) => {
+            const v = valueByNode.get(p.name);
+            return v === undefined
+              ? `{n|${p.name}}`
+              : `{n|${p.name}}\n{v|${formatNumber(v, 0)} MWh · ${share(v)}}`;
+          },
+          rich: {
+            n: { fontSize: 12, fontWeight: 600, color: "#0F1C3F", lineHeight: 15 },
+            v: { fontSize: 11, color: "#6B7899", lineHeight: 14 },
+          },
+        },
+        data: activeNodes,
         links: activeLinks,
       },
     ],
@@ -261,29 +331,29 @@ export function buildEnergySankeyOption(
 export function buildCyclesChartOption(monthly: BacktestingMonthlyRecord[]): Record<string, unknown> {
   const months = monthly.map((m) => m.month_label);
   const cycles = monthly.map((m) => Math.round((m.avg_daily_cycles ?? 0) * 100) / 100);
+  const avg = cycles.length ? cycles.reduce((a, b) => a + b, 0) / cycles.length : 0;
 
   return {
-    tooltip: {
-      trigger: "axis",
-      valueFormatter: (v: number) => formatNumber(v, 2),
-    },
-    grid: { left: 50, right: 16, top: 16, bottom: 40 },
-    xAxis: { type: "category", data: months },
-    yAxis: {
-      type: "value",
-      name: "Zyklen/Tag",
-      min: 0,
-      axisLabel: {
-        formatter: (v: number) => formatNumber(v, 1),
-      },
-    },
+    ...monthlyBase(months, "cycles", { showLegend: false, axisName: "Zyklen/Tag" }),
     series: [
       {
         name: "Ø Vollzyklen/Tag",
         type: "bar",
         data: cycles,
-        itemStyle: { color: ENERGY_COLORS.dark_blue },
-        barMaxWidth: 28,
+        itemStyle: { color: COLORS.blueDark, borderRadius: [3, 3, 0, 0] },
+        barMaxWidth: 30,
+        markLine: {
+          silent: true,
+          symbol: "none",
+          lineStyle: { color: COLORS.orangeDark, width: 1.4, type: "dashed" },
+          label: {
+            formatter: `Jahresmittel ${formatNumber(avg, 2)}`,
+            color: COLORS.orangeDark,
+            fontSize: 11,
+            position: "insideEndTop",
+          },
+          data: [{ yAxis: avg }],
+        },
       },
     ],
   };
